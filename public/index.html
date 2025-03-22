@@ -411,6 +411,14 @@
                 font-size: 10px;
                 top: 2px;
             }
+            .ui-buttons {
+                top: 65px;
+                right: 10px;
+            }
+            .action-buttons {
+                bottom: 140px;
+                right: 20px;
+            }
         }
 
         /* Additional mobile-specific styles */
@@ -596,6 +604,13 @@
                     updateHealthMana();
                     hideElement(characterCreation);
                     showGameUI();
+                    
+                    // On mobile, hide chat and inventory by default
+                    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                        hideElement(chatUI);
+                        hideElement(inventory);
+                    }
+                    
                     initGameWorld();
                     connectToServer();
                     isLoggedIn = true;
@@ -897,8 +912,23 @@
         // Setup keyboard controls
         function setupControls() {
             const keysPressed = {};
+            let isChatActive = false;
+            
+            // Chat input focus handlers
+            chatInput.addEventListener('focus', function() {
+                isChatActive = true;
+            });
+            
+            chatInput.addEventListener('blur', function() {
+                isChatActive = false;
+            });
             
             document.addEventListener('keydown', (event) => {
+                // Don't process movement keys when typing in chat
+                if (isChatActive && ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(event.key.toLowerCase())) {
+                    return;
+                }
+                
                 keysPressed[event.key.toLowerCase()] = true;
                 
                 // Tab key to toggle player list details
@@ -909,6 +939,11 @@
             });
             
             document.addEventListener('keyup', (event) => {
+                // Don't process movement keys when typing in chat
+                if (isChatActive && ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(event.key.toLowerCase())) {
+                    return;
+                }
+                
                 keysPressed[event.key.toLowerCase()] = false;
                 
                 // Additional key actions
@@ -931,10 +966,14 @@
             // Movement and controls update in animation loop
             controls = {
                 keysPressed: keysPressed,
+                isChatActive: function() { return isChatActive; },
                 moveDirection: new THREE.Vector3(),
                 speed: CONFIG.MOVEMENT_SPEED,
                 
                 update: function(delta) {
+                    // Skip movement if chat is active
+                    if (this.isChatActive()) return;
+                    
                     const moveDirection = new THREE.Vector3();
                     
                     if (this.keysPressed['w'] || this.keysPressed['arrowup']) moveDirection.z -= 1;
