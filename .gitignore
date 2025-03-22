@@ -1,3 +1,4 @@
 .DS_Store
 development-guide.md
 .cursor
+node_modules
