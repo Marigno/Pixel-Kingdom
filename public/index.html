@@ -92,6 +92,7 @@
             overflow-y: auto;
             padding: 5px;
             font-size: 14px;
+            margin-bottom: 30px; /* Add space for input field */
         }
         #chat-input {
             position: absolute;
@@ -301,7 +302,7 @@
         /* Mobile action buttons */
         .action-buttons {
             position: absolute;
-            bottom: 60px;
+            bottom: 30px;
             right: 30px;
             display: flex;
             flex-direction: column;
@@ -376,6 +377,7 @@
             }
             #chat-messages {
                 height: 90px;
+                margin-bottom: 25px; /* Space for chat input on mobile */
             }
             #health-bar, #mana-bar {
                 width: 100px;
@@ -412,12 +414,13 @@
                 top: 2px;
             }
             .ui-buttons {
-                top: 65px;
+                top: 10px;
                 right: 10px;
             }
             .action-buttons {
-                bottom: 140px;
+                bottom: 30px;
                 right: 20px;
+                flex-direction: row;
             }
         }
 
@@ -452,6 +455,47 @@
         }
         .connection-status.connecting {
             color: #ffcc00;
+        }
+
+        /* Add new styles for player list modal */
+        #player-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 300px;
+            z-index: 30;
+            border: 2px solid #555;
+            display: none;
+        }
+        
+        #player-modal h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+        
+        #player-modal-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        #player-modal .close-button {
+            margin-top: 15px;
+            background-color: #553388;
+            color: #eee;
+            border: none;
+            padding: 8px 15px;
+            width: 100%;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        #player-modal .close-button:hover {
+            background-color: #6644aa;
         }
     </style>
 </head>
@@ -537,10 +581,17 @@
             <div class="ui-buttons">
                 <div id="btn-chat" class="ui-button">💬</div>
                 <div id="btn-inventory" class="ui-button">🎒</div>
+                <div id="btn-players" class="ui-button">👥</div>
             </div>
         </div>
         
         <div id="tab-indicator">Press Tab to show players</div>
+
+        <div id="player-modal" class="hidden">
+            <h3>Players Online: <span id="modal-online-count">0</span></h3>
+            <div id="player-modal-list"></div>
+            <button class="close-button">Close</button>
+        </div>
     </div>
 
     <div id="connection-status" class="connection-status">Connecting...</div>
@@ -1029,6 +1080,7 @@
                 const btnInteract = document.getElementById('btn-interact');
                 const btnChat = document.getElementById('btn-chat');
                 const btnInventory = document.getElementById('btn-inventory');
+                const btnPlayers = document.getElementById('btn-players');
                 
                 // Action button - can be used for attacks or special actions
                 btnAction.addEventListener('touchstart', () => {
@@ -1048,16 +1100,15 @@
                 // Inventory button
                 btnInventory.addEventListener('touchend', toggleInventory);
                 
-                // Allow player list to toggle on click/tap
+                // Players button (show player modal)
+                btnPlayers.addEventListener('touchend', showPlayerModal);
+                
+                // Set up player modal close button
+                document.querySelector('#player-modal .close-button').addEventListener('click', hidePlayerModal);
+                
+                // Allow player list to toggle on click/tap in desktop mode
                 playerList.addEventListener('click', () => {
                     playerList.classList.toggle('expanded');
-                    // Adjust UI buttons position when player list is expanded
-                    if (playerList.classList.contains('expanded')) {
-                        document.querySelector('.ui-buttons').style.top = 
-                            (playerList.offsetHeight + playerList.offsetTop + 10) + 'px';
-                    } else {
-                        document.querySelector('.ui-buttons').style.top = '10px';
-                    }
                 });
                 
                 // Make inventory draggable on mobile
@@ -1667,10 +1718,18 @@
             // Update player count
             const playerCount = 1 + Object.keys(gameState.otherPlayers).length; // Current player + others
             document.getElementById('online-count').textContent = playerCount;
+            document.getElementById('modal-online-count').textContent = playerCount;
             
+            // Update both player lists
+            updatePlayerListContent('player-details');
+            updatePlayerListContent('player-modal-list');
+        }
+        
+        // Update a specific player list content
+        function updatePlayerListContent(elementId) {
             // Clear the list
-            const playerDetails = document.getElementById('player-details');
-            playerDetails.innerHTML = '';
+            const playerContainer = document.getElementById(elementId);
+            playerContainer.innerHTML = '';
             
             // Add the current player
             const currentPlayerItem = document.createElement('div');
@@ -1695,7 +1754,7 @@
             
             currentPlayerItem.appendChild(currentPlayerName);
             currentPlayerItem.appendChild(currentPlayerInfo);
-            playerDetails.appendChild(currentPlayerItem);
+            playerContainer.appendChild(currentPlayerItem);
             
             // Add other players
             const playerIds = Object.keys(gameState.otherPlayers);
@@ -1730,7 +1789,7 @@
                 
                 playerItem.appendChild(playerName);
                 playerItem.appendChild(playerInfo);
-                playerDetails.appendChild(playerItem);
+                playerContainer.appendChild(playerItem);
             });
         }
         
@@ -1809,6 +1868,11 @@
             showElement(healthBar);
             showElement(manaBar);
             showElement(inventory);
+            
+            // For mobile, show the player count button but not expanded list
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                hideElement(playerList.querySelector('#player-details'));
+            }
         }
 
         // Show element by removing hidden class
@@ -1841,6 +1905,19 @@
                 const v = c === 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             });
+        }
+
+        // Show player modal dialog
+        function showPlayerModal() {
+            const playerModal = document.getElementById('player-modal');
+            playerModal.style.display = 'block';
+            updatePlayerList();
+        }
+        
+        // Hide player modal dialog
+        function hidePlayerModal() {
+            const playerModal = document.getElementById('player-modal');
+            playerModal.style.display = 'none';
         }
 
         // Start the game
