@@ -18,6 +18,16 @@ const server = http.createServer(app);
 // Create WebSocket server instance
 const wss = new WebSocket.Server({ server, path: '/ws' });
 
+// Enable debug logging
+const DEBUG = true;
+
+// Debug logger
+function debugLog(message, data) {
+  if (DEBUG) {
+    console.log(`[SERVER DEBUG] ${message}`, data || '');
+  }
+}
+
 // Game state
 const gameState = {
   players: {},
@@ -50,49 +60,69 @@ initializeNPCs();
 
 // Broadcast to all connected clients
 function broadcast(message, excludeClient = null) {
+  let messageStr = typeof message === 'string' ? message : JSON.stringify(message);
+  let count = 0;
+  
   wss.clients.forEach(client => {
     if (client !== excludeClient && client.readyState === WebSocket.OPEN) {
-      client.send(message);
+      client.send(messageStr);
+      count++;
     }
   });
+  
+  debugLog(`Broadcasted message to ${count} clients`, message);
+}
+
+// Send message to specific client
+function sendToClient(client, message) {
+  if (client.readyState === WebSocket.OPEN) {
+    let messageStr = typeof message === 'string' ? message : JSON.stringify(message);
+    client.send(messageStr);
+    debugLog('Sent message to client', message);
+  } else {
+    debugLog('Cannot send message - client not ready', client.readyState);
+  }
 }
 
 // Handle WebSocket connections
 wss.on('connection', (ws) => {
-  console.log('New client connected');
+  debugLog('New client connected');
   let playerId = null;
 
   // Send current world state to the new player
   function sendWorldState() {
     // Send all existing players
     Object.values(gameState.players).forEach(player => {
-      ws.send(JSON.stringify({
+      sendToClient(ws, {
         type: 'player_join',
         player: player
-      }));
+      });
     });
 
     // Send all NPCs
     gameState.npcs.forEach(npc => {
-      ws.send(JSON.stringify({
+      sendToClient(ws, {
         type: 'npc_info',
         npc: npc
-      }));
+      });
     });
 
     // Send all items
     gameState.items.forEach(item => {
-      ws.send(JSON.stringify({
+      sendToClient(ws, {
         type: 'item_info',
         item: item
-      }));
+      });
     });
+    
+    debugLog('World state sent to new player');
   }
 
   // Handle messages
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
+      debugLog('Received message', data);
 
       // Handle different message types
       switch (data.type) {
@@ -112,13 +142,18 @@ wss.on('connection', (ws) => {
             lastSeen: new Date()
           };
           
-          console.log(`Player joined: ${data.player.name} (${playerId})`);
+          debugLog(`Player joined: ${data.player.name} (${playerId})`);
           
-          // Send current world state to the new player
-          sendWorldState();
+          // Send current world state to the new player (including other players)
+          setTimeout(() => {
+            sendWorldState();
+          }, 500);
           
-          // Broadcast player join to other players
-          broadcast(message, ws);
+          // Broadcast player join to all clients (including the player who just joined)
+          broadcast({
+            type: 'player_join',
+            player: gameState.players[playerId]
+          });
           break;
 
         case 'player_position':
@@ -126,17 +161,33 @@ wss.on('connection', (ws) => {
           if (playerId && gameState.players[playerId]) {
             gameState.players[playerId].position = data.player.position;
             gameState.players[playerId].lastSeen = new Date();
+            
+            // Broadcast position update to all clients
+            broadcast({
+              type: 'player_position',
+              player: {
+                id: playerId,
+                name: gameState.players[playerId].name,
+                position: data.player.position
+              }
+            });
           }
-          
-          // Broadcast position update to other players
-          broadcast(message, ws);
           break;
 
         case 'chat_message':
-          console.log(`Chat from ${data.player.name}: ${data.message}`);
-          
-          // Broadcast chat message to all players
-          broadcast(message);
+          if (playerId && gameState.players[playerId]) {
+            debugLog(`Chat from ${gameState.players[playerId].name}: ${data.message}`);
+            
+            // Broadcast chat message to all clients
+            broadcast({
+              type: 'chat_message',
+              player: {
+                id: playerId,
+                name: gameState.players[playerId].name
+              },
+              message: data.message
+            });
+          }
           break;
           
         case 'player_update':
@@ -147,8 +198,11 @@ wss.on('connection', (ws) => {
             if (data.player.level) gameState.players[playerId].level = data.player.level;
             gameState.players[playerId].lastSeen = new Date();
             
-            // Broadcast update to all players
-            broadcast(message);
+            // Broadcast update to all clients
+            broadcast({
+              type: 'player_update',
+              player: gameState.players[playerId]
+            });
           }
           break;
 
@@ -158,7 +212,7 @@ wss.on('connection', (ws) => {
           break;
 
         default:
-          console.log(`Unknown message type: ${data.type}`);
+          debugLog(`Unknown message type: ${data.type}`);
       }
     } catch (error) {
       console.error('Error processing message:', error);
@@ -168,14 +222,14 @@ wss.on('connection', (ws) => {
   // Handle client disconnect
   ws.on('close', () => {
     if (playerId && gameState.players[playerId]) {
-      console.log(`Player disconnected: ${gameState.players[playerId].name} (${playerId})`);
+      debugLog(`Player disconnected: ${gameState.players[playerId].name} (${playerId})`);
       
       // Broadcast player disconnect to other clients
-      broadcast(JSON.stringify({
+      broadcast({
         type: 'player_leave',
         playerId: playerId,
         playerName: gameState.players[playerId].name
-      }));
+      });
       
       // Remove player from game state
       delete gameState.players[playerId];
@@ -193,12 +247,12 @@ function handlePlayerAction(data, ws) {
       const npc = gameState.npcs.find(n => n.id === targetId);
       if (npc) {
         // Send NPC dialog to the player
-        ws.send(JSON.stringify({
+        sendToClient(ws, {
           type: 'npc_dialog',
           npcId: targetId,
           npcName: npc.name,
           dialog: `Hello adventurer! I am ${npc.name}.`
-        }));
+        });
       }
       break;
       
@@ -212,8 +266,7 @@ function handlePlayerAction(data, ws) {
   }
 }
 
-// Cleanup inactive players (optional, uncomment if needed)
-/*
+// Cleanup inactive players (uncommented to help with stuck connections)
 setInterval(() => {
   const now = new Date();
   const timeoutThreshold = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -221,26 +274,31 @@ setInterval(() => {
   Object.keys(gameState.players).forEach(playerId => {
     const player = gameState.players[playerId];
     if (now - player.lastSeen > timeoutThreshold) {
-      console.log(`Removing inactive player: ${player.name} (${playerId})`);
+      debugLog(`Removing inactive player: ${player.name} (${playerId})`);
       
       // Broadcast player disconnect
-      broadcast(JSON.stringify({
+      broadcast({
         type: 'player_leave',
         playerId: playerId,
         playerName: player.name
-      }));
+      });
       
       // Remove player from game state
       delete gameState.players[playerId];
     }
   });
 }, 60000); // Check every minute
-*/
 
 // Route to serve the game client
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// Log the number of connected players every 30 seconds
+setInterval(() => {
+  const playerCount = Object.keys(gameState.players).length;
+  debugLog(`Current players online: ${playerCount}`);
+}, 30000);
 
 // Start the server
 server.listen(PORT, () => {

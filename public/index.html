@@ -463,6 +463,7 @@
                 ? 'wss://' + location.host + '/ws' 
                 : 'ws://' + location.host + '/ws',
             SAVE_INTERVAL: 30000, // Save character every 30 seconds
+            DEBUG: true, // Enable debug logging
         };
 
         // Game state
@@ -1078,6 +1079,13 @@
                 });
         }
 
+        // Debug logging
+        function debugLog(message, data) {
+            if (CONFIG.DEBUG) {
+                console.log(`[DEBUG] ${message}`, data);
+            }
+        }
+
         // Connect to WebSocket server
         function connectToServer() {
             showLoadingIndicator('Connecting to server...');
@@ -1087,7 +1095,7 @@
             websocket = new WebSocket(CONFIG.WEBSOCKET_URL);
             
             websocket.onopen = function() {
-                console.log('Connected to server');
+                debugLog('Connected to server');
                 hideLoadingIndicator();
                 updateConnectionStatus('connected', 'Connected');
                 
@@ -1105,16 +1113,18 @@
                     }
                 };
                 
+                debugLog('Sending player_join', initialData);
                 websocket.send(JSON.stringify(initialData));
                 addSystemMessage('Connected to server. Welcome to Pixel Kingdom!');
             };
             
             websocket.onmessage = function(event) {
+                debugLog('Received message', event.data);
                 handleServerMessage(event.data);
             };
             
             websocket.onclose = function() {
-                console.log('Disconnected from server');
+                debugLog('Disconnected from server');
                 updateConnectionStatus('disconnected', 'Disconnected. Reconnecting...');
                 addSystemMessage('Disconnected from server. Attempting to reconnect...');
                 
@@ -1157,26 +1167,32 @@
         function handleServerMessage(message) {
             try {
                 const data = JSON.parse(message);
+                debugLog('Processing message', data);
                 
                 switch (data.type) {
                     case 'player_join':
                         // Only process if it's not our own join message
                         if (data.player.id !== gameState.player.id) {
+                            debugLog('Adding other player', data.player);
                             addOtherPlayer(data.player);
                             addSystemMessage(`${data.player.name} has joined the game!`);
                             updatePlayerList();
+                        } else {
+                            debugLog('Ignoring own player_join message');
                         }
                         break;
                         
                     case 'player_position':
                         // Update other player position
                         if (data.player.id !== gameState.player.id) {
+                            debugLog('Updating player position', data.player);
                             updateOtherPlayerPosition(data.player);
                         }
                         break;
                         
                     case 'chat_message':
                         // Display chat message from other players
+                        debugLog('Received chat message', data);
                         if (data.player.id !== gameState.player.id) {
                             addPlayerMessage(data.player.name, data.message);
                         }
@@ -1184,6 +1200,7 @@
                         
                     case 'player_leave':
                         // Remove player who disconnected
+                        debugLog('Player leaving', data);
                         if (data.playerId && gameState.otherPlayers[data.playerId]) {
                             removeOtherPlayer(data.playerId);
                             updatePlayerList();
@@ -1203,9 +1220,12 @@
                             addItemToGame(data.item);
                         }
                         break;
+                        
+                    default:
+                        debugLog('Unknown message type', data.type);
                 }
             } catch (e) {
-                console.error('Error parsing server message', e);
+                console.error('Error parsing server message', e, message);
             }
         }
 
@@ -1221,7 +1241,10 @@
                     }
                 };
                 
+                debugLog('Sending position update', updateData);
                 websocket.send(JSON.stringify(updateData));
+            } else {
+                debugLog('Cannot send position update - WebSocket not open');
             }
         }
 
@@ -1237,9 +1260,11 @@
                     message: message
                 };
                 
+                debugLog('Sending chat message', chatData);
                 websocket.send(JSON.stringify(chatData));
                 addPlayerMessage(gameState.player.name, message);
             } else {
+                debugLog('Cannot send chat message - WebSocket not open');
                 addSystemMessage('You are not connected to the server.');
             }
         }
@@ -1248,8 +1273,13 @@
         function addOtherPlayer(playerData) {
             // Check if player already exists
             if (gameState.otherPlayers[playerData.id]) {
+                debugLog('Player already exists, updating data', playerData);
+                // Update player data
+                gameState.otherPlayers[playerData.id].data = playerData;
                 return;
             }
+            
+            debugLog('Creating new player mesh', playerData);
             
             // Create player mesh
             const otherPlayerMesh = createCharacterMesh(playerData.class);
@@ -1272,21 +1302,31 @@
             };
             
             updatePlayerList();
+            debugLog('Other player added successfully', playerData.id);
         }
         
         // Remove other player from the game
         function removeOtherPlayer(playerId) {
             const player = gameState.otherPlayers[playerId];
             if (player && player.mesh) {
+                debugLog('Removing player from scene', playerId);
                 playerGroup.remove(player.mesh);
                 delete gameState.otherPlayers[playerId];
                 addSystemMessage(`${player.data.name} has left the game.`);
+            } else {
+                debugLog('Failed to remove player - not found', playerId);
             }
         }
 
         // Update other player position
         function updateOtherPlayerPosition(playerData) {
             const player = gameState.otherPlayers[playerData.id];
+            
+            if (!player) {
+                debugLog('Player not found for position update, adding them', playerData);
+                addOtherPlayer(playerData);
+                return;
+            }
             
             if (player && player.mesh) {
                 // Smoothly move to new position
@@ -1296,11 +1336,26 @@
                     playerData.position.z
                 );
                 
+                // Update player direction
+                if (player.data.position) {
+                    const prevX = player.data.position.x;
+                    const prevZ = player.data.position.z;
+                    
+                    const moveX = playerData.position.x - prevX;
+                    const moveZ = playerData.position.z - prevZ;
+                    
+                    if (Math.abs(moveX) > 0.01 || Math.abs(moveZ) > 0.01) {
+                        player.mesh.rotation.y = Math.atan2(moveX, moveZ);
+                    }
+                }
+                
                 const currentPosition = player.mesh.position;
                 currentPosition.lerp(targetPosition, 0.5);
                 
                 // Update stored data
                 player.data.position = playerData.position;
+            } else {
+                debugLog('Player mesh not found for position update', playerData.id);
             }
         }
         
