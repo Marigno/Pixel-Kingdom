@@ -301,7 +301,7 @@
         /* Mobile action buttons */
         .action-buttons {
             position: absolute;
-            bottom: 30px;
+            bottom: 60px;
             right: 30px;
             display: flex;
             flex-direction: column;
@@ -325,11 +325,12 @@
         
         /* Mobile UI buttons */
         .ui-buttons {
-            position: absolute;
+            position: fixed;
             top: 10px;
             right: 10px;
             display: flex;
             gap: 10px;
+            z-index: 20;
         }
         
         .ui-button {
@@ -367,8 +368,11 @@
             }
             #chat {
                 max-width: calc(100% - 20px);
-                width: auto;
+                width: calc(100% - 20px);
                 height: 120px;
+                bottom: 180px;
+                left: 10px;
+                z-index: 15;
             }
             #chat-messages {
                 height: 90px;
@@ -377,15 +381,42 @@
                 width: 100px;
             }
             #inventory {
-                width: 150px;
-                height: 100px;
-            }
-            .inventory-slot {
-                width: 30px;
-                height: 30px;
+                width: 200px;
+                height: 150px;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 30;
             }
             #tab-indicator {
-                display: block;
+                display: none;
+            }
+            #player-list {
+                right: 65px;
+                min-width: auto;
+                padding: 8px;
+            }
+            #player-list h3 {
+                margin: 0;
+                font-size: 14px;
+            }
+            #player-list.expanded {
+                z-index: 25;
+                background-color: rgba(0, 0, 0, 0.8);
+                padding: 10px;
+                min-width: 180px;
+            }
+            .connection-status {
+                font-size: 10px;
+                top: 2px;
+            }
+        }
+
+        /* Additional mobile-specific styles */
+        @media (max-width: 768px) {
+            .full-text {
+                display: none;
             }
         }
 
@@ -454,7 +485,7 @@
         </div>
 
         <div id="player-list" class="hidden">
-            <h3>Players Online: <span id="online-count">1</span></h3>
+            <h3><span class="full-text">Players </span>Online: <span id="online-count">1</span></h3>
             <div id="player-details"></div>
         </div>
 
@@ -981,7 +1012,17 @@
                 // Allow player list to toggle on click/tap
                 playerList.addEventListener('click', () => {
                     playerList.classList.toggle('expanded');
+                    // Adjust UI buttons position when player list is expanded
+                    if (playerList.classList.contains('expanded')) {
+                        document.querySelector('.ui-buttons').style.top = 
+                            (playerList.offsetHeight + playerList.offsetTop + 10) + 'px';
+                    } else {
+                        document.querySelector('.ui-buttons').style.top = '10px';
+                    }
                 });
+                
+                // Make inventory draggable on mobile
+                makeElementDraggable(inventory);
             }
         }
         
@@ -1073,6 +1114,63 @@
                 controls.keysPressed['arrowleft'] = normalizedX < -deadzone;
                 controls.keysPressed['arrowright'] = normalizedX > deadzone;
             }
+        }
+
+        // Make an element draggable (for mobile inventory)
+        function makeElementDraggable(element) {
+            let isDragging = false;
+            let offsetX, offsetY;
+            
+            // Add drag handle
+            const dragHandle = document.createElement('div');
+            dragHandle.style.width = '100%';
+            dragHandle.style.height = '20px';
+            dragHandle.style.backgroundColor = 'rgba(85, 51, 136, 0.8)';
+            dragHandle.style.borderTopLeftRadius = '5px';
+            dragHandle.style.borderTopRightRadius = '5px';
+            dragHandle.style.cursor = 'move';
+            dragHandle.style.position = 'absolute';
+            dragHandle.style.top = '0';
+            dragHandle.style.left = '0';
+            
+            element.style.paddingTop = '25px';
+            element.appendChild(dragHandle);
+            
+            // Touch handlers
+            dragHandle.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                isDragging = true;
+                
+                const touch = e.touches[0];
+                const rect = element.getBoundingClientRect();
+                
+                offsetX = touch.clientX - rect.left;
+                offsetY = touch.clientY - rect.top;
+                
+                element.style.transition = 'none';
+            });
+            
+            document.addEventListener('touchmove', function(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const touch = e.touches[0];
+                
+                const left = touch.clientX - offsetX;
+                const top = touch.clientY - offsetY;
+                
+                // Keep inventory within window bounds
+                const maxX = window.innerWidth - element.offsetWidth;
+                const maxY = window.innerHeight - element.offsetHeight;
+                
+                element.style.left = Math.max(0, Math.min(maxX, left)) + 'px';
+                element.style.top = Math.max(0, Math.min(maxY, top)) + 'px';
+                element.style.transform = 'none';
+            });
+            
+            document.addEventListener('touchend', function() {
+                isDragging = false;
+            });
         }
 
         // Animation loop
