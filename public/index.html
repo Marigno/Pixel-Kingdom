@@ -38,6 +38,7 @@
             border-radius: 5px;
             text-align: center;
             max-width: 400px;
+            width: 90%;
             pointer-events: auto;
             border: 2px solid #555;
         }
@@ -53,11 +54,13 @@
             border: 1px solid #555;
             color: #eee;
             border-radius: 3px;
+            font-size: 16px; /* Larger for mobile */
         }
         button {
             background-color: #553388;
             cursor: pointer;
             transition: background-color 0.2s;
+            padding: 12px 8px;
         }
         button:hover {
             background-color: #6644aa;
@@ -70,16 +73,19 @@
             padding: 10px;
             border-radius: 5px;
             pointer-events: none;
+            z-index: 10;
         }
         #chat {
             position: absolute;
             bottom: 10px;
             left: 10px;
             width: 350px;
+            max-width: calc(100% - 220px);
             height: 180px;
             background-color: rgba(0, 0, 0, 0.6);
             border-radius: 5px;
             pointer-events: auto;
+            z-index: 10;
         }
         #chat-messages {
             height: 150px;
@@ -112,7 +118,47 @@
             background-color: rgba(0, 0, 0, 0.6);
             padding: 10px;
             border-radius: 5px;
-            min-width: 150px;
+            min-width: 100px;
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 10;
+        }
+        #online-count {
+            text-align: center;
+            font-weight: bold;
+        }
+        #player-details {
+            display: none;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #player-list.expanded #player-details {
+            display: block;
+        }
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px;
+            border-bottom: 1px solid #444;
+        }
+        .player-name {
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .player-info {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .health-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #cc3333;
         }
         #inventory {
             position: absolute;
@@ -123,6 +169,7 @@
             border-radius: 5px;
             width: 200px;
             height: 150px;
+            z-index: 10;
         }
         .inventory-slot {
             display: inline-block;
@@ -141,6 +188,7 @@
             background-color: rgba(0, 0, 0, 0.6);
             border-radius: 5px;
             overflow: hidden;
+            z-index: 10;
         }
         #health-fill {
             height: 100%;
@@ -156,6 +204,7 @@
             background-color: rgba(0, 0, 0, 0.6);
             border-radius: 5px;
             overflow: hidden;
+            z-index: 10;
         }
         #mana-fill {
             height: 100%;
@@ -181,8 +230,10 @@
             border-radius: 5px;
             text-align: center;
             max-width: 400px;
+            width: 90%;
             pointer-events: auto;
             border: 2px solid #555;
+            z-index: 20;
         }
         #token-text {
             word-break: break-all;
@@ -202,9 +253,112 @@
             font-size: 12px;
             transition: opacity 0.3s;
             opacity: 0;
+            z-index: 20;
         }
         .loading-indicator.active {
             opacity: 1;
+        }
+        
+        /* Mobile controls */
+        #mobile-controls {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 10;
+        }
+        .control-button {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 2px solid #555;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 5px;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        #dpad {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+        }
+        #btn-up { grid-area: 1/2/2/3; }
+        #btn-left { grid-area: 2/1/3/2; }
+        #btn-right { grid-area: 2/3/3/4; }
+        #btn-down { grid-area: 3/2/4/3; }
+        
+        /* Tab key indicator */
+        #tab-indicator {
+            position: absolute;
+            top: 10px;
+            right: 120px;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 5px 10px;
+            border-radius: 3px;
+            display: none;
+            z-index: 10;
+        }
+        
+        /* Media Queries for Mobile */
+        @media (max-width: 768px) {
+            #mobile-controls {
+                display: flex;
+                gap: 20px;
+            }
+            #chat {
+                max-width: calc(100% - 20px);
+                width: auto;
+                height: 120px;
+            }
+            #chat-messages {
+                height: 90px;
+            }
+            #health-bar, #mana-bar {
+                width: 100px;
+            }
+            #inventory {
+                width: 150px;
+                height: 100px;
+            }
+            .inventory-slot {
+                width: 30px;
+                height: 30px;
+            }
+            #tab-indicator {
+                display: block;
+            }
+        }
+
+        /* Add CSS for connection status indicator */
+        .connection-status {
+            position: fixed;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #ffcc00;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 1000;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+        .connection-status.connected {
+            color: #33cc33;
+            opacity: 0;
+        }
+        .connection-status.disconnected {
+            color: #cc3333;
+        }
+        .connection-status.connecting {
+            color: #ffcc00;
         }
     </style>
 </head>
@@ -246,8 +400,8 @@
         </div>
 
         <div id="player-list" class="hidden">
-            <h3>Players Online</h3>
-            <div id="online-players"></div>
+            <h3>Players Online: <span id="online-count">1</span></h3>
+            <div id="player-details"></div>
         </div>
 
         <div id="health-bar" class="hidden">
@@ -278,7 +432,24 @@
         </div>
 
         <div id="loading-indicator" class="loading-indicator">Loading resources...</div>
+        
+        <div id="mobile-controls" class="hidden">
+            <div id="dpad">
+                <div id="btn-up" class="control-button">⬆️</div>
+                <div id="btn-left" class="control-button">⬅️</div>
+                <div id="btn-right" class="control-button">➡️</div>
+                <div id="btn-down" class="control-button">⬇️</div>
+            </div>
+            <div id="action-buttons">
+                <div id="btn-chat" class="control-button">💬</div>
+                <div id="btn-inventory" class="control-button">🎒</div>
+            </div>
+        </div>
+        
+        <div id="tab-indicator">Press Tab to show players</div>
     </div>
+
+    <div id="connection-status" class="connection-status">Connecting...</div>
 
     <script type="module">
         import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
@@ -288,7 +459,9 @@
             WORLD_SIZE: 100,
             TILE_SIZE: 1,
             MOVEMENT_SPEED: 5,
-            WEBSOCKET_URL: 'wss://pixelkingdom.net/ws', // WebSocket server on your domain
+            WEBSOCKET_URL: location.protocol === 'https:' 
+                ? 'wss://' + location.host + '/ws' 
+                : 'ws://' + location.host + '/ws',
             SAVE_INTERVAL: 30000, // Save character every 30 seconds
         };
 
@@ -640,6 +813,12 @@
             
             document.addEventListener('keydown', (event) => {
                 keysPressed[event.key.toLowerCase()] = true;
+                
+                // Tab key to toggle player list details
+                if (event.key === 'Tab') {
+                    event.preventDefault(); // Prevent tab from changing focus
+                    playerList.classList.toggle('expanded');
+                }
             });
             
             document.addEventListener('keyup', (event) => {
@@ -659,6 +838,9 @@
                 }
             });
             
+            // Setup mobile controls
+            setupMobileControls();
+            
             // Movement and controls update in animation loop
             controls = {
                 keysPressed: keysPressed,
@@ -668,10 +850,10 @@
                 update: function(delta) {
                     const moveDirection = new THREE.Vector3();
                     
-                    if (this.keysPressed['w']) moveDirection.z -= 1;
-                    if (this.keysPressed['s']) moveDirection.z += 1;
-                    if (this.keysPressed['a']) moveDirection.x -= 1;
-                    if (this.keysPressed['d']) moveDirection.x += 1;
+                    if (this.keysPressed['w'] || this.keysPressed['arrowup']) moveDirection.z -= 1;
+                    if (this.keysPressed['s'] || this.keysPressed['arrowdown']) moveDirection.z += 1;
+                    if (this.keysPressed['a'] || this.keysPressed['arrowleft']) moveDirection.x -= 1;
+                    if (this.keysPressed['d'] || this.keysPressed['arrowright']) moveDirection.x += 1;
                     
                     if (moveDirection.length() > 0) {
                         moveDirection.normalize();
@@ -702,6 +884,57 @@
                     }
                 }
             };
+        }
+        
+        // Setup mobile controls
+        function setupMobileControls() {
+            // Show mobile controls on touch devices
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            if (isTouchDevice) {
+                const mobileControls = document.getElementById('mobile-controls');
+                showElement(mobileControls);
+                
+                // Setup D-pad controls
+                const btnUp = document.getElementById('btn-up');
+                const btnDown = document.getElementById('btn-down');
+                const btnLeft = document.getElementById('btn-left');
+                const btnRight = document.getElementById('btn-right');
+                const btnChat = document.getElementById('btn-chat');
+                const btnInventory = document.getElementById('btn-inventory');
+                
+                // Function to handle button press
+                function handleButtonPress(key, isPressed) {
+                    controls.keysPressed[key] = isPressed;
+                }
+                
+                // Up button
+                btnUp.addEventListener('touchstart', () => handleButtonPress('arrowup', true));
+                btnUp.addEventListener('touchend', () => handleButtonPress('arrowup', false));
+                
+                // Down button
+                btnDown.addEventListener('touchstart', () => handleButtonPress('arrowdown', true));
+                btnDown.addEventListener('touchend', () => handleButtonPress('arrowdown', false));
+                
+                // Left button
+                btnLeft.addEventListener('touchstart', () => handleButtonPress('arrowleft', true));
+                btnLeft.addEventListener('touchend', () => handleButtonPress('arrowleft', false));
+                
+                // Right button
+                btnRight.addEventListener('touchstart', () => handleButtonPress('arrowright', true));
+                btnRight.addEventListener('touchend', () => handleButtonPress('arrowright', false));
+                
+                // Chat button
+                btnChat.addEventListener('touchend', toggleChat);
+                
+                // Inventory button
+                btnInventory.addEventListener('touchend', toggleInventory);
+                
+                // Allow player list to toggle on click/tap
+                playerList.addEventListener('click', () => {
+                    playerList.classList.toggle('expanded');
+                });
+            }
         }
 
         // Animation loop
@@ -848,6 +1081,7 @@
         // Connect to WebSocket server
         function connectToServer() {
             showLoadingIndicator('Connecting to server...');
+            updateConnectionStatus('connecting', 'Connecting to server...');
             
             // Create WebSocket connection
             websocket = new WebSocket(CONFIG.WEBSOCKET_URL);
@@ -855,6 +1089,7 @@
             websocket.onopen = function() {
                 console.log('Connected to server');
                 hideLoadingIndicator();
+                updateConnectionStatus('connected', 'Connected');
                 
                 // Send initial player data
                 const initialData = {
@@ -864,7 +1099,9 @@
                         name: gameState.player.name,
                         class: gameState.player.class,
                         position: gameState.player.position,
-                        level: gameState.player.level
+                        level: gameState.player.level,
+                        health: gameState.player.health,
+                        maxHealth: gameState.player.maxHealth
                     }
                 };
                 
@@ -878,6 +1115,7 @@
             
             websocket.onclose = function() {
                 console.log('Disconnected from server');
+                updateConnectionStatus('disconnected', 'Disconnected. Reconnecting...');
                 addSystemMessage('Disconnected from server. Attempting to reconnect...');
                 
                 // Try to reconnect after a delay
@@ -887,19 +1125,42 @@
             websocket.onerror = function(error) {
                 console.error('WebSocket error:', error);
                 hideLoadingIndicator();
+                updateConnectionStatus('disconnected', 'Connection error');
                 addSystemMessage('Connection error. Please try again later.');
             };
+        }
+        
+        // Update connection status display
+        function updateConnectionStatus(status, message) {
+            const statusElement = document.getElementById('connection-status');
+            
+            // Remove all status classes
+            statusElement.classList.remove('connecting', 'connected', 'disconnected');
+            
+            // Add the current status class
+            statusElement.classList.add(status);
+            
+            // Set the status message
+            statusElement.textContent = message;
+            
+            // Auto-hide the status after 3 seconds if connected
+            if (status === 'connected') {
+                setTimeout(() => {
+                    statusElement.style.opacity = '0';
+                }, 3000);
+            } else {
+                statusElement.style.opacity = '1';
+            }
         }
 
         // Handle messages from the server
         function handleServerMessage(message) {
-            // For demo, we're using an echo server, so we receive our own messages back
             try {
                 const data = JSON.parse(message);
                 
                 switch (data.type) {
                     case 'player_join':
-                        // In a real implementation, we would add the player to our game
+                        // Only process if it's not our own join message
                         if (data.player.id !== gameState.player.id) {
                             addOtherPlayer(data.player);
                             addSystemMessage(`${data.player.name} has joined the game!`);
@@ -915,9 +1176,31 @@
                         break;
                         
                     case 'chat_message':
-                        // Display chat message
+                        // Display chat message from other players
                         if (data.player.id !== gameState.player.id) {
                             addPlayerMessage(data.player.name, data.message);
+                        }
+                        break;
+                        
+                    case 'player_leave':
+                        // Remove player who disconnected
+                        if (data.playerId && gameState.otherPlayers[data.playerId]) {
+                            removeOtherPlayer(data.playerId);
+                            updatePlayerList();
+                        }
+                        break;
+                        
+                    case 'npc_info':
+                        // Add NPC to the game
+                        if (data.npc) {
+                            addNpcToGame(data.npc);
+                        }
+                        break;
+                        
+                    case 'item_info':
+                        // Add item to the game
+                        if (data.item) {
+                            addItemToGame(data.item);
                         }
                         break;
                 }
@@ -990,6 +1273,16 @@
             
             updatePlayerList();
         }
+        
+        // Remove other player from the game
+        function removeOtherPlayer(playerId) {
+            const player = gameState.otherPlayers[playerId];
+            if (player && player.mesh) {
+                playerGroup.remove(player.mesh);
+                delete gameState.otherPlayers[playerId];
+                addSystemMessage(`${player.data.name} has left the game.`);
+            }
+        }
 
         // Update other player position
         function updateOtherPlayerPosition(playerData) {
@@ -1010,26 +1303,102 @@
                 player.data.position = playerData.position;
             }
         }
+        
+        // Add NPC to the game
+        function addNpcToGame(npcData) {
+            // Implementation will be added later
+            console.log('NPC added:', npcData);
+        }
+        
+        // Add item to the game
+        function addItemToGame(itemData) {
+            // Implementation will be added later
+            console.log('Item added:', itemData);
+        }
 
         // Update the player list UI
         function updatePlayerList() {
+            // Update player count
+            const playerCount = 1 + Object.keys(gameState.otherPlayers).length; // Current player + others
+            document.getElementById('online-count').textContent = playerCount;
+            
             // Clear the list
-            onlinePlayers.innerHTML = '';
+            const playerDetails = document.getElementById('player-details');
+            playerDetails.innerHTML = '';
             
             // Add the current player
             const currentPlayerItem = document.createElement('div');
-            currentPlayerItem.textContent = `${gameState.player.name} (You)`;
-            onlinePlayers.appendChild(currentPlayerItem);
+            currentPlayerItem.className = 'player-item';
+            
+            const currentPlayerName = document.createElement('div');
+            currentPlayerName.className = 'player-name';
+            currentPlayerName.textContent = `${gameState.player.name} (You)`;
+            
+            const currentPlayerInfo = document.createElement('div');
+            currentPlayerInfo.className = 'player-info';
+            
+            const currentPlayerLevel = document.createElement('span');
+            currentPlayerLevel.textContent = `Lvl ${gameState.player.level}`;
+            
+            const healthIndicator = document.createElement('div');
+            healthIndicator.className = 'health-indicator';
+            healthIndicator.style.backgroundColor = getHealthColor(gameState.player.health, gameState.player.maxHealth);
+            
+            currentPlayerInfo.appendChild(currentPlayerLevel);
+            currentPlayerInfo.appendChild(healthIndicator);
+            
+            currentPlayerItem.appendChild(currentPlayerName);
+            currentPlayerItem.appendChild(currentPlayerInfo);
+            playerDetails.appendChild(currentPlayerItem);
             
             // Add other players
             const playerIds = Object.keys(gameState.otherPlayers);
             
             playerIds.forEach(id => {
                 const player = gameState.otherPlayers[id];
+                
                 const playerItem = document.createElement('div');
-                playerItem.textContent = `${player.data.name}`;
-                onlinePlayers.appendChild(playerItem);
+                playerItem.className = 'player-item';
+                
+                const playerName = document.createElement('div');
+                playerName.className = 'player-name';
+                playerName.textContent = player.data.name;
+                
+                const playerInfo = document.createElement('div');
+                playerInfo.className = 'player-info';
+                
+                const playerLevel = document.createElement('span');
+                // Use level from player data if available, default to 1
+                const level = player.data.level || 1;
+                playerLevel.textContent = `Lvl ${level}`;
+                
+                const healthInd = document.createElement('div');
+                healthInd.className = 'health-indicator';
+                // Default to full health if not specified
+                const health = player.data.health || 100;
+                const maxHealth = player.data.maxHealth || 100;
+                healthInd.style.backgroundColor = getHealthColor(health, maxHealth);
+                
+                playerInfo.appendChild(playerLevel);
+                playerInfo.appendChild(healthInd);
+                
+                playerItem.appendChild(playerName);
+                playerItem.appendChild(playerInfo);
+                playerDetails.appendChild(playerItem);
             });
+        }
+        
+        // Get color based on health percentage
+        function getHealthColor(health, maxHealth) {
+            const healthPercent = health / maxHealth;
+            
+            if (healthPercent > 0.7) {
+                return '#33cc33'; // Green
+            } else if (healthPercent > 0.3) {
+                return '#ffcc00'; // Yellow
+            } else {
+                return '#cc3333'; // Red
+            }
         }
 
         // Add system message to chat

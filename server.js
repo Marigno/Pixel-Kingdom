@@ -99,7 +99,19 @@ wss.on('connection', (ws) => {
         case 'player_join':
           // Store player in game state
           playerId = data.player.id;
-          gameState.players[playerId] = data.player;
+          
+          // Save all player data including level and health
+          gameState.players[playerId] = {
+            id: data.player.id,
+            name: data.player.name,
+            class: data.player.class,
+            position: data.player.position,
+            level: data.player.level || 1,
+            health: data.player.health || 100,
+            maxHealth: data.player.maxHealth || 100,
+            lastSeen: new Date()
+          };
+          
           console.log(`Player joined: ${data.player.name} (${playerId})`);
           
           // Send current world state to the new player
@@ -113,6 +125,7 @@ wss.on('connection', (ws) => {
           // Update player position
           if (playerId && gameState.players[playerId]) {
             gameState.players[playerId].position = data.player.position;
+            gameState.players[playerId].lastSeen = new Date();
           }
           
           // Broadcast position update to other players
@@ -120,8 +133,23 @@ wss.on('connection', (ws) => {
           break;
 
         case 'chat_message':
+          console.log(`Chat from ${data.player.name}: ${data.message}`);
+          
           // Broadcast chat message to all players
           broadcast(message);
+          break;
+          
+        case 'player_update':
+          // Update player stats like health, level, etc.
+          if (playerId && gameState.players[playerId]) {
+            if (data.player.health) gameState.players[playerId].health = data.player.health;
+            if (data.player.maxHealth) gameState.players[playerId].maxHealth = data.player.maxHealth;
+            if (data.player.level) gameState.players[playerId].level = data.player.level;
+            gameState.players[playerId].lastSeen = new Date();
+            
+            // Broadcast update to all players
+            broadcast(message);
+          }
           break;
 
         case 'player_action':
@@ -145,7 +173,8 @@ wss.on('connection', (ws) => {
       // Broadcast player disconnect to other clients
       broadcast(JSON.stringify({
         type: 'player_leave',
-        playerId: playerId
+        playerId: playerId,
+        playerName: gameState.players[playerId].name
       }));
       
       // Remove player from game state
@@ -182,6 +211,31 @@ function handlePlayerAction(data, ws) {
       break;
   }
 }
+
+// Cleanup inactive players (optional, uncomment if needed)
+/*
+setInterval(() => {
+  const now = new Date();
+  const timeoutThreshold = 5 * 60 * 1000; // 5 minutes in milliseconds
+  
+  Object.keys(gameState.players).forEach(playerId => {
+    const player = gameState.players[playerId];
+    if (now - player.lastSeen > timeoutThreshold) {
+      console.log(`Removing inactive player: ${player.name} (${playerId})`);
+      
+      // Broadcast player disconnect
+      broadcast(JSON.stringify({
+        type: 'player_leave',
+        playerId: playerId,
+        playerName: player.name
+      }));
+      
+      // Remove player from game state
+      delete gameState.players[playerId];
+    }
+  });
+}, 60000); // Check every minute
+*/
 
 // Route to serve the game client
 app.get('/', (req, res) => {
