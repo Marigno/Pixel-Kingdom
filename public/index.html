@@ -349,6 +349,27 @@
             user-select: none;
         }
         
+        /* Player count button specific styling */
+        #btn-players {
+            position: relative;
+            font-size: 18px;
+        }
+        
+        #btn-players-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #553388;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
         /* Tab key indicator */
         #tab-indicator {
             position: absolute;
@@ -395,19 +416,7 @@
                 display: none;
             }
             #player-list {
-                right: 65px;
-                min-width: auto;
-                padding: 8px;
-            }
-            #player-list h3 {
-                margin: 0;
-                font-size: 14px;
-            }
-            #player-list.expanded {
-                z-index: 25;
-                background-color: rgba(0, 0, 0, 0.8);
-                padding: 10px;
-                min-width: 180px;
+                display: none !important; /* Completely hide desktop player list on mobile */
             }
             .connection-status {
                 font-size: 10px;
@@ -471,6 +480,7 @@
             z-index: 30;
             border: 2px solid #555;
             display: none;
+            pointer-events: auto; /* Ensure the modal can receive clicks */
         }
         
         #player-modal h3 {
@@ -581,7 +591,7 @@
             <div class="ui-buttons">
                 <div id="btn-chat" class="ui-button">💬</div>
                 <div id="btn-inventory" class="ui-button">🎒</div>
-                <div id="btn-players" class="ui-button">👥</div>
+                <div id="btn-players" class="ui-button">👥<div id="btn-players-count">1</div></div>
             </div>
         </div>
         
@@ -1111,8 +1121,9 @@
                     playerList.classList.toggle('expanded');
                 });
                 
-                // Make inventory draggable on mobile
+                // Make inventory and player modal draggable on mobile
                 makeElementDraggable(inventory);
+                makeElementDraggable(document.getElementById('player-modal'));
             }
         }
         
@@ -1719,6 +1730,7 @@
             const playerCount = 1 + Object.keys(gameState.otherPlayers).length; // Current player + others
             document.getElementById('online-count').textContent = playerCount;
             document.getElementById('modal-online-count').textContent = playerCount;
+            document.getElementById('btn-players-count').textContent = playerCount;
             
             // Update both player lists
             updatePlayerListContent('player-details');
@@ -1869,9 +1881,9 @@
             showElement(manaBar);
             showElement(inventory);
             
-            // For mobile, show the player count button but not expanded list
+            // For mobile, completely hide the player list
             if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-                hideElement(playerList.querySelector('#player-details'));
+                hideElement(playerList);
             }
         }
 
@@ -1910,6 +1922,9 @@
         // Show player modal dialog
         function showPlayerModal() {
             const playerModal = document.getElementById('player-modal');
+            // Use classList to make it consistent with other UI elements
+            showElement(playerModal);
+            // Also make sure the element is visible since we're using display: none in CSS
             playerModal.style.display = 'block';
             updatePlayerList();
         }
@@ -1917,6 +1932,8 @@
         // Hide player modal dialog
         function hidePlayerModal() {
             const playerModal = document.getElementById('player-modal');
+            hideElement(playerModal);
+            // Also make sure to reset the display style
             playerModal.style.display = 'none';
         }
 
