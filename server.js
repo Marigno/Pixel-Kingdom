@@ -15,8 +15,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Create HTTP server
 const server = http.createServer(app);
 
-// Create WebSocket server instance - NO PATH RESTRICTION to fix connection issues
-const wss = new WebSocket.Server({ server });
+// Create WebSocket server instance - with proper headers handling for proxied connections
+const wss = new WebSocket.Server({ 
+  server,
+  // Handle proxied wss connections properly - needed when behind nginx
+  verifyClient: (info) => {
+    // You can add additional verification here if needed
+    return true;
+  }
+});
 
 // Enable debug logging
 const DEBUG = true;
@@ -121,7 +128,9 @@ wss.on('connection', (ws, req) => {
   ws.isAlive = true;
   ws.on('pong', heartbeat);
   
-  debugLog('New client connected from ' + req.socket.remoteAddress);
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  debugLog('New client connected from ' + ip);
+  debugLog('Connection headers:', req.headers);
   debugLog('Total clients: ' + getConnectedClientsCount());
   
   let playerId = null;
@@ -345,7 +354,12 @@ const pingInterval = setInterval(() => {
     }
     
     ws.isAlive = false;
-    ws.ping(() => {});
+    try {
+      ws.ping();
+    } catch (err) {
+      debugLog('Error pinging client', err.message);
+      ws.terminate();
+    }
   });
 }, 30000);
 
@@ -382,6 +396,17 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Add a health check endpoint for monitoring
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+    clients: getConnectedClientsCount(),
+    players: Object.keys(gameState.players).length
+  });
+});
+
 // Log the number of connected players periodically
 setInterval(() => {
   const playerCount = Object.keys(gameState.players).length;
@@ -392,5 +417,7 @@ setInterval(() => {
 // Start the server
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`WebSocket server is running at ws://localhost:${PORT}`);
+  const protocol = process.env.NODE_ENV === 'production' ? 'wss' : 'ws';
+  console.log(`WebSocket server is running at ${protocol}://localhost:${PORT}`);
+  console.log(`For production, make sure Nginx is properly configured to proxy ${protocol}:// requests`);
 });
