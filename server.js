@@ -16,14 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app);
 
 // Create WebSocket server instance - with proper headers handling for proxied connections
-const wss = new WebSocket.Server({ 
-  server,
-  // Handle proxied wss connections properly - needed when behind nginx
-  verifyClient: (info) => {
-    // You can add additional verification here if needed
-    return true;
-  }
-});
+const wss = new WebSocket.Server({ server });
 
 // Enable debug logging
 const DEBUG = true;
