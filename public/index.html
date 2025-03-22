@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pixel Kingdom - Lightweight MMORPG</title>
     <style>
         body {
@@ -11,6 +11,9 @@
             font-family: 'Arial', sans-serif;
             background-color: #111;
             color: #eee;
+            position: fixed; /* Prevent body scrolling on mobile */
+            width: 100%;
+            height: 100%;
         }
         #game-container {
             position: relative;
@@ -395,6 +398,8 @@
                 bottom: 180px;
                 left: 10px;
                 z-index: 15;
+                /* Fix for mobile keyboard issues */
+                position: fixed;
             }
             #chat-messages {
                 height: 90px;
@@ -699,7 +704,20 @@
                     if (message) {
                         sendChatMessage(message);
                         chatInput.value = '';
+                        // On mobile, blur the input to hide keyboard and reset viewport
+                        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                            chatInput.blur();
+                            // Force scroll adjustment after keyboard disappears
+                            setTimeout(() => {
+                                window.scrollTo(0, 0);
+                            }, 100);
+                        }
                     }
+                }
+                
+                // Prevent any movement keys from triggering while typing
+                if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'space'].includes(e.key.toLowerCase())) {
+                    e.stopPropagation();
                 }
             });
             
@@ -978,15 +996,30 @@
             // Chat input focus handlers
             chatInput.addEventListener('focus', function() {
                 isChatActive = true;
+                
+                // Reset all movement keys when chat becomes active
+                keysPressed['w'] = false;
+                keysPressed['a'] = false;
+                keysPressed['s'] = false;
+                keysPressed['d'] = false;
+                keysPressed['arrowup'] = false;
+                keysPressed['arrowdown'] = false;
+                keysPressed['arrowleft'] = false;
+                keysPressed['arrowright'] = false;
             });
             
             chatInput.addEventListener('blur', function() {
                 isChatActive = false;
+                
+                // Adjust viewport on mobile when keyboard disappears
+                if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                    window.scrollTo(0, 0);
+                }
             });
             
             document.addEventListener('keydown', (event) => {
-                // Don't process movement keys when typing in chat
-                if (isChatActive && ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(event.key.toLowerCase())) {
+                // Don't process any movement keys when typing in chat
+                if (isChatActive) {
                     return;
                 }
                 
@@ -1000,24 +1033,28 @@
             });
             
             document.addEventListener('keyup', (event) => {
-                // Don't process movement keys when typing in chat
-                if (isChatActive && ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(event.key.toLowerCase())) {
+                // Don't process any movement keys when typing in chat
+                if (isChatActive && 
+                   ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 
+                    'c', 'i', 't', ' ', 'space'].includes(event.key.toLowerCase())) {
                     return;
                 }
                 
                 keysPressed[event.key.toLowerCase()] = false;
                 
                 // Additional key actions
-                if (event.key === 'c' || event.key === 'C') {
-                    toggleChat();
-                }
-                
-                if (event.key === 'i' || event.key === 'I') {
-                    toggleInventory();
-                }
-                
-                if (event.key === 't' || event.key === 'T') {
-                    showTokenDialog();
+                if (!isChatActive) {
+                    if (event.key === 'c' || event.key === 'C') {
+                        toggleChat();
+                    }
+                    
+                    if (event.key === 'i' || event.key === 'I') {
+                        toggleInventory();
+                    }
+                    
+                    if (event.key === 't' || event.key === 'T') {
+                        showTokenDialog();
+                    }
                 }
             });
             
