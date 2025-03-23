@@ -35,6 +35,7 @@
         }
         canvas {
             display: block;
+            pointer-events: auto;
         }
         #ui-overlay {
             position: absolute;
@@ -1610,7 +1611,8 @@
             
             // Setup mouse controls
             renderer.domElement.addEventListener('click', (event) => {
-                if (isChatActive || isModalOpen()) {
+                // Only check for chat being active, not modals
+                if (isChatActive) {
                     return;
                 }
                 
@@ -1776,16 +1778,8 @@
                 speed: CONFIG.MOVEMENT_SPEED,
                 
                 update: function(delta) {
-                    // Skip movement if chat is active or any modal is open
-                    const isModalVisible = document.getElementById('character-screen') && !document.getElementById('character-screen').classList.contains('hidden') ||
-                              document.getElementById('map-screen') && !document.getElementById('map-screen').classList.contains('hidden') ||
-                              document.getElementById('inventory') && !document.getElementById('inventory').classList.contains('hidden') ||
-                              document.getElementById('player-modal') && !document.getElementById('player-modal').classList.contains('hidden') ||
-                              document.getElementById('reconnect-token') && !document.getElementById('reconnect-token').classList.contains('hidden') ||
-                              document.getElementById('key-bindings') && !document.getElementById('key-bindings').classList.contains('hidden') ||
-                              document.getElementById('character-creation') && !document.getElementById('character-creation').classList.contains('hidden');
-                    
-                    if (this.isChatActive() || isModalVisible) {
+                    // Only skip movement if chat is active
+                    if (this.isChatActive()) {
                         return;
                     }
                     
