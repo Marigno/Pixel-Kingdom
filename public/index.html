@@ -611,6 +611,7 @@
 
     <div id="connection-status" class="connection-status">Connecting...</div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
     <script type="module">
         import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
         
@@ -877,10 +878,14 @@
 
         // Add decorative elements to the world
         function addWorldDecoration() {
+            // Generate a deterministic seed for consistent map generation
+            const seed = 12345;
+            const rng = new Math.seedrandom(seed.toString());
+            
             // Add trees
             for (let i = 0; i < 50; i++) {
-                const x = (Math.random() * CONFIG.WORLD_SIZE - CONFIG.WORLD_SIZE/2) * CONFIG.TILE_SIZE;
-                const z = (Math.random() * CONFIG.WORLD_SIZE - CONFIG.WORLD_SIZE/2) * CONFIG.TILE_SIZE;
+                const x = (rng() * CONFIG.WORLD_SIZE - CONFIG.WORLD_SIZE/2) * CONFIG.TILE_SIZE;
+                const z = (rng() * CONFIG.WORLD_SIZE - CONFIG.WORLD_SIZE/2) * CONFIG.TILE_SIZE;
                 
                 // Don't place trees at the spawn point
                 if (Math.abs(x) < 5 && Math.abs(z) < 5) continue;
@@ -890,8 +895,8 @@
             
             // Add rocks
             for (let i = 0; i < 30; i++) {
-                const x = (Math.random() * CONFIG.WORLD_SIZE - CONFIG.WORLD_SIZE/2) * CONFIG.TILE_SIZE;
-                const z = (Math.random() * CONFIG.WORLD_SIZE - CONFIG.WORLD_SIZE/2) * CONFIG.TILE_SIZE;
+                const x = (rng() * CONFIG.WORLD_SIZE - CONFIG.WORLD_SIZE/2) * CONFIG.TILE_SIZE;
+                const z = (rng() * CONFIG.WORLD_SIZE - CONFIG.WORLD_SIZE/2) * CONFIG.TILE_SIZE;
                 
                 // Don't place rocks at the spawn point
                 if (Math.abs(x) < 5 && Math.abs(z) < 5) continue;
@@ -923,6 +928,11 @@
             
             tree.position.set(x, y, z);
             worldGroup.add(tree);
+            
+            // Add tree to collision system
+            collisionSystem.addObstacle({x, y, z}, 1.0, 'tree');
+            
+            return tree;
         }
 
         // Create a simple rock
@@ -937,13 +947,16 @@
                 Math.random() * Math.PI, 
                 Math.random() * Math.PI
             );
-            rock.scale.set(
-                0.7 + Math.random() * 0.6,
-                0.7 + Math.random() * 0.6,
-                0.7 + Math.random() * 0.6
-            );
+            
+            const scale = 0.7 + Math.random() * 0.6;
+            rock.scale.set(scale, scale, scale);
             
             worldGroup.add(rock);
+            
+            // Add rock to collision system
+            collisionSystem.addObstacle({x, y, z}, 0.5 * scale, 'rock');
+            
+            return rock;
         }
 
         // Create a simple house
@@ -986,12 +999,19 @@
             
             house.position.set(x, y, z);
             worldGroup.add(house);
+            
+            // Add house to collision system - add each wall separately for better accuracy
+            collisionSystem.addObstacle({x, y, z}, 3.0, 'house');
+            
+            return house;
         }
 
         // Setup keyboard controls
         function setupControls() {
             const keysPressed = {};
             let isChatActive = false;
+            let isJumping = false;
+            let targetPosition = null;
             
             // Chat input focus handlers
             chatInput.addEventListener('focus', function() {
@@ -1030,13 +1050,23 @@
                     event.preventDefault(); // Prevent tab from changing focus
                     playerList.classList.toggle('expanded');
                 }
+                
+                // Jump action (J key)
+                if (event.key.toLowerCase() === 'j' && !isJumping) {
+                    performJumpAction();
+                }
+                
+                // Attack action (K key)
+                if (event.key.toLowerCase() === 'k') {
+                    performAttackAction();
+                }
             });
             
             document.addEventListener('keyup', (event) => {
                 // Don't process any movement keys when typing in chat
                 if (isChatActive && 
                    ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 
-                    'c', 'i', 't', ' ', 'space'].includes(event.key.toLowerCase())) {
+                    'c', 'i', 't', ' ', 'space', 'j', 'k'].includes(event.key.toLowerCase())) {
                     return;
                 }
                 
@@ -1058,6 +1088,96 @@
                 }
             });
             
+            // Setup mouse controls
+            renderer.domElement.addEventListener('click', (event) => {
+                if (isChatActive) return;
+                
+                // Calculate mouse position in normalized device coordinates (-1 to +1)
+                const mouse = new THREE.Vector2(
+                    (event.clientX / window.innerWidth) * 2 - 1,
+                    -(event.clientY / window.innerHeight) * 2 + 1
+                );
+                
+                // Create raycaster
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+                
+                // Find intersections with the ground plane
+                const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+                const targetPoint = new THREE.Vector3();
+                raycaster.ray.intersectPlane(groundPlane, targetPoint);
+                
+                // Set target position
+                targetPosition = {
+                    x: targetPoint.x,
+                    y: playerMesh.position.y,
+                    z: targetPoint.z
+                };
+                
+                // Turn player towards the clicked point immediately
+                const dx = targetPosition.x - playerMesh.position.x;
+                const dz = targetPosition.z - playerMesh.position.z;
+                if (Math.abs(dx) > 0.01 || Math.abs(dz) > 0.01) {
+                    playerMesh.rotation.y = Math.atan2(dx, dz);
+                }
+            });
+            
+            // Function to perform jump action
+            function performJumpAction() {
+                if (isJumping) return;
+                
+                isJumping = true;
+                const originalY = playerMesh.position.y;
+                const jumpHeight = 1.5;
+                const jumpDuration = 0.5; // in seconds
+                const jumpStart = gameState.gameTime;
+                
+                function animateJump() {
+                    const elapsed = gameState.gameTime - jumpStart;
+                    const progress = Math.min(elapsed / jumpDuration, 1);
+                    
+                    // Simple parabolic jump trajectory
+                    const height = jumpHeight * Math.sin(progress * Math.PI);
+                    playerMesh.position.y = originalY + height;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animateJump);
+                    } else {
+                        // Reset position and jump state
+                        playerMesh.position.y = originalY;
+                        isJumping = false;
+                    }
+                }
+                
+                animateJump();
+            }
+            
+            // Function to perform attack action
+            function performAttackAction() {
+                // Visual feedback for attack
+                const attackIndicator = document.createElement('div');
+                attackIndicator.textContent = '⚔️ Attack!';
+                attackIndicator.style.position = 'absolute';
+                attackIndicator.style.top = '50%';
+                attackIndicator.style.left = '50%';
+                attackIndicator.style.transform = 'translate(-50%, -50%)';
+                attackIndicator.style.color = '#ff3333';
+                attackIndicator.style.fontSize = '24px';
+                attackIndicator.style.fontWeight = 'bold';
+                attackIndicator.style.textShadow = '0 0 5px #000';
+                attackIndicator.style.pointerEvents = 'none';
+                attackIndicator.style.zIndex = '100';
+                document.body.appendChild(attackIndicator);
+                
+                // Remove after short duration
+                setTimeout(() => {
+                    document.body.removeChild(attackIndicator);
+                }, 500);
+                
+                // TODO: Implement actual attack logic
+                console.log('Attack action performed');
+            }
+            
             // Setup mobile controls
             setupMobileControls();
             
@@ -1074,17 +1194,49 @@
                     
                     const moveDirection = new THREE.Vector3();
                     
+                    // Handle keyboard movement
                     if (this.keysPressed['w'] || this.keysPressed['arrowup']) moveDirection.z -= 1;
                     if (this.keysPressed['s'] || this.keysPressed['arrowdown']) moveDirection.z += 1;
                     if (this.keysPressed['a'] || this.keysPressed['arrowleft']) moveDirection.x -= 1;
                     if (this.keysPressed['d'] || this.keysPressed['arrowright']) moveDirection.x += 1;
                     
+                    // Handle target position movement (from mouse clicks)
+                    if (targetPosition) {
+                        const dx = targetPosition.x - playerMesh.position.x;
+                        const dz = targetPosition.z - playerMesh.position.z;
+                        const distSquared = dx * dx + dz * dz;
+                        
+                        // If we're close enough to the target, stop moving
+                        if (distSquared < 0.1) {
+                            targetPosition = null;
+                        } else {
+                            // Calculate normalized direction to target
+                            const dist = Math.sqrt(distSquared);
+                            moveDirection.x = dx / dist;
+                            moveDirection.z = dz / dist;
+                        }
+                    }
+                    
                     if (moveDirection.length() > 0) {
                         moveDirection.normalize();
                         
+                        // Calculate new position
+                        const newPosition = {
+                            x: playerMesh.position.x + moveDirection.x * this.speed * delta,
+                            y: playerMesh.position.y,
+                            z: playerMesh.position.z + moveDirection.z * this.speed * delta
+                        };
+                        
+                        // Check for collision and get valid position
+                        const validPosition = collisionSystem.getValidPosition(
+                            {x: playerMesh.position.x, y: playerMesh.position.y, z: playerMesh.position.z},
+                            newPosition,
+                            0.4 // Player radius
+                        );
+                        
                         // Move the player
-                        playerMesh.position.x += moveDirection.x * this.speed * delta;
-                        playerMesh.position.z += moveDirection.z * this.speed * delta;
+                        playerMesh.position.x = validPosition.x;
+                        playerMesh.position.z = validPosition.z;
                         
                         // Update player direction
                         if (moveDirection.x !== 0 || moveDirection.z !== 0) {
