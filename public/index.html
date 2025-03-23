@@ -2165,15 +2165,96 @@
             }
         }
         
-        // Toggle player modal visibility
-        function togglePlayerModal() {
-            const playerModal = document.getElementById('player-modal');
+        // Setup virtual joystick for mobile controls
+        function setupVirtualJoystick() {
+            const joystickContainer = document.getElementById('joystick-container');
+            const joystickHandle = document.getElementById('joystick-handle');
             
-            if (playerModal.classList.contains('hidden')) {
-                showPlayerModal();
-            } else {
-                hidePlayerModal();
-            }
+            if (!joystickContainer || !joystickHandle) return;
+            
+            let active = false;
+            let startX = 0;
+            let startY = 0;
+            let joystickX = 0;
+            let joystickY = 0;
+            
+            // Container dimensions
+            const containerRect = joystickContainer.getBoundingClientRect();
+            const containerCenterX = containerRect.width / 2;
+            const containerCenterY = containerRect.height / 2;
+            const maxDistance = containerRect.width / 2 - 10;
+            
+            // Touch start
+            joystickContainer.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                active = true;
+                
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                
+                // Center handle initially
+                joystickHandle.style.transform = 'translate(-50%, -50%)';
+            });
+            
+            // Touch move
+            document.addEventListener('touchmove', function(e) {
+                if (!active) return;
+                
+                e.preventDefault();
+                
+                // Calculate joystick position
+                const touchX = e.touches[0].clientX;
+                const touchY = e.touches[0].clientY;
+                
+                // Distance from start
+                let deltaX = touchX - startX;
+                let deltaY = touchY - startY;
+                
+                // Limit to container radius
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > maxDistance) {
+                    const angle = Math.atan2(deltaY, deltaX);
+                    deltaX = Math.cos(angle) * maxDistance;
+                    deltaY = Math.sin(angle) * maxDistance;
+                }
+                
+                // Update handle position
+                joystickHandle.style.left = (containerCenterX + deltaX) + 'px';
+                joystickHandle.style.top = (containerCenterY + deltaY) + 'px';
+                
+                // Normalize for movement (-1 to 1)
+                joystickX = deltaX / maxDistance;
+                joystickY = deltaY / maxDistance;
+                
+                // Update controls
+                if (controls) {
+                    controls.moveDirection.x = joystickX;
+                    controls.moveDirection.z = joystickY;
+                }
+            });
+            
+            // Touch end
+            document.addEventListener('touchend', function() {
+                if (!active) return;
+                
+                active = false;
+                
+                // Reset handle position
+                joystickHandle.style.left = '50%';
+                joystickHandle.style.top = '50%';
+                joystickHandle.style.transform = 'translate(-50%, -50%)';
+                
+                // Reset joystick values
+                joystickX = 0;
+                joystickY = 0;
+                
+                // Update controls
+                if (controls) {
+                    controls.moveDirection.x = 0;
+                    controls.moveDirection.z = 0;
+                }
+            });
         }
 
         // Animation loop
@@ -2743,6 +2824,28 @@
             localStorage.setItem('pixelRealmsCharacter', JSON.stringify(gameState.player));
         }
 
+        // Update health and mana UI displays
+        function updateHealthMana() {
+            if (!gameState.player) return;
+            
+            // Update health bar
+            const healthFill = document.getElementById('health-fill');
+            const healthText = healthBar.querySelector('.progress-text');
+            const healthPercent = (gameState.player.health / gameState.player.maxHealth) * 100;
+            
+            healthFill.style.width = healthPercent + '%';
+            healthFill.style.backgroundColor = getHealthColor(gameState.player.health, gameState.player.maxHealth);
+            healthText.textContent = `${gameState.player.health}/${gameState.player.maxHealth}`;
+            
+            // Update mana bar
+            const manaFill = document.getElementById('mana-fill');
+            const manaText = manaBar.querySelector('.progress-text');
+            const manaPercent = (gameState.player.mana / gameState.player.maxMana) * 100;
+            
+            manaFill.style.width = manaPercent + '%';
+            manaText.textContent = `${gameState.player.mana}/${gameState.player.maxMana}`;
+        }
+
         // Show game UI elements
         function showGameUI() {
             showElement(statsUI);
@@ -2867,6 +2970,17 @@
                 document.removeEventListener('touchend', closeDragElement);
                 document.removeEventListener('mousemove', elementDrag);
                 document.removeEventListener('mouseup', closeDragElement);
+            }
+        }
+
+        // Toggle player modal visibility
+        function togglePlayerModal() {
+            const playerModal = document.getElementById('player-modal');
+            
+            if (playerModal.classList.contains('hidden')) {
+                showPlayerModal();
+            } else {
+                hidePlayerModal();
             }
         }
 
