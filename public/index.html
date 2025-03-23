@@ -1530,11 +1530,6 @@
                     return;
                 }
                 
-                // Only stop propagation if needed for non-navigation keys
-                if (!['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-                    event.stopPropagation();
-                }
-                
                 // Store key state using key code for better compatibility
                 const key = event.key.toLowerCase();
                 keysPressed[key] = true;
@@ -1578,11 +1573,6 @@
                     return;
                 }
                 
-                // Only stop propagation if needed for non-navigation keys
-                if (!['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-                    event.stopPropagation();
-                }
-                
                 const key = event.key.toLowerCase();
                 keysPressed[key] = false;
                 
@@ -1620,10 +1610,15 @@
             
             // Setup mouse controls
             renderer.domElement.addEventListener('click', (event) => {
-                if (isChatActive || isModalOpen()) return;
+                if (isChatActive || isModalOpen()) {
+                    console.log('Click ignored - Chat active or modal open');
+                    return;
+                }
                 
                 // Check if left mouse button
                 if (event.button === 0) {
+                    console.log('Mouse click detected');
+                    
                     // Calculate mouse position in normalized device coordinates (-1 to +1)
                     const mouse = new THREE.Vector2(
                         (event.clientX / window.innerWidth) * 2 - 1,
@@ -1649,6 +1644,8 @@
                             y: playerMesh.position.y,
                             z: targetPoint.z
                         };
+                        
+                        console.log('Setting target position:', targetPosition);
                         
                         // Turn player towards the clicked point immediately
                         const dx = targetPosition.x - playerMesh.position.x;
@@ -1811,18 +1808,12 @@
                                    this.keysPressed['arrowleft'], this.keysPressed['arrowright']);
                     }
                     
-                    // If we have input from the virtual joystick, use it instead
-                    // Only override if there's actual joystick movement
-                    if (this.moveDirection.length() > 0) {
-                        // On mobile, prefer the joystick input over keyboard
-                        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-                            moveDirection.copy(this.moveDirection);
-                        } 
-                        // On desktop, combine with keyboard input (keyboard takes priority if both are used)
-                        else if (moveDirection.length() === 0) {
-                            moveDirection.copy(this.moveDirection);
-                        }
+                    // For mobile devices, use joystick input if available 
+                    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                    if (isTouchDevice && this.moveDirection.length() > 0) {
+                        moveDirection.copy(this.moveDirection);
                     }
+                    // For desktop, we already set the moveDirection from keyboard above
                     
                     // Handle target position movement (from mouse clicks)
                     if (targetPosition) {
@@ -1926,23 +1917,27 @@
         
         // Check if any modal window is open
         function isModalOpen() {
-            const modalElements = [
-                document.getElementById('character-screen'),
-                document.getElementById('map-screen'),
-                document.getElementById('inventory'),
-                document.getElementById('player-modal'),
-                document.getElementById('reconnect-token'),
-                document.getElementById('key-bindings'),
-                document.getElementById('character-creation')
-            ];
-            
-            return modalElements.some(elem => {
-                // Element is visible if it doesn't have the 'hidden' class AND
-                // either has no display style or display is not 'none'
-                return elem && 
-                       !elem.classList.contains('hidden') && 
-                       (elem.style.display === '' || elem.style.display !== 'none');
-            });
+            try {
+                const modalElements = [
+                    document.getElementById('character-screen'),
+                    document.getElementById('map-screen'),
+                    document.getElementById('inventory'),
+                    document.getElementById('player-modal'),
+                    document.getElementById('reconnect-token'),
+                    document.getElementById('key-bindings'),
+                    document.getElementById('character-creation')
+                ];
+                
+                return modalElements.some(elem => {
+                    // Check if element exists before checking its properties
+                    return elem && 
+                           !elem.classList.contains('hidden') && 
+                           (elem.style.display === '' || elem.style.display !== 'none');
+                });
+            } catch (e) {
+                console.error('Error in isModalOpen:', e);
+                return false; // Default to allowing movement if there's an error
+            }
         }
         
         // Toggle inventory visibility
