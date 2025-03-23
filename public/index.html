@@ -8,7 +8,7 @@
     <!-- Open Graph / Social Media Meta Tags -->
     <meta property="og:title" content="Pixel Kingdom | Open World MMORPG">
     <meta property="og:description" content="Explore a vast pixel world, battle monsters, collect loot, and interact with other players in this lightweight browser-based MMORPG. No downloads required!">
-    <meta property="og:image" content="/pixel-kingdom-og.png">
+    <meta property="og:image" content="/pixel-kingdom-og.jpg">
     <meta property="og:url" content="https://pixelkingdom.net">
     <meta property="og:type" content="website">
     <meta name="description" content="Pixel Kingdom | Open World MMORPG - A browser-based multiplayer RPG with pixel graphics. Explore, battle, and team up with friends in a vast world.">
@@ -343,20 +343,19 @@
         
         /* Mobile UI buttons */
         .ui-buttons {
-            position: fixed;
-            top: 10px;
-            right: 10px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
             display: flex;
             flex-wrap: wrap;
-            width: 150px;
             gap: 10px;
-            z-index: 20;
+            width: 140px;
             justify-content: flex-end;
         }
         
         .ui-button {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background-color: rgba(0, 0, 0, 0.6);
             border: 2px solid #555;
             border-radius: 50%;
@@ -369,10 +368,8 @@
             user-select: none;
         }
         
-        /* Player count button specific styling */
         #btn-players {
             position: relative;
-            font-size: 18px;
         }
         
         #btn-players-count {
@@ -386,10 +383,10 @@
             height: 20px;
             font-size: 12px;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
         }
-        
+
         /* Tab key indicator */
         #tab-indicator {
             position: absolute;
@@ -854,41 +851,42 @@
             <button class="close-button">Close</button>
         </div>
 
-        <div id="key-bindings" class="hidden">
-            <h3>Key Bindings</h3>
-            <div class="key-row">
-                <span>Movement</span>
-                <span class="key">WASD</span>
+        <!-- Help screen with key bindings -->
+        <div id="key-bindings" class="modal hidden">
+            <div class="modal-header">
+                <h2>Help & Controls</h2>
+                <button class="close-button" onclick="toggleHelp()">×</button>
             </div>
-            <div class="key-row">
-                <span>Jump</span>
-                <span class="key">Space</span>
+            <div class="modal-content">
+                <h3>Movement Controls</h3>
+                <ul>
+                    <li><strong>W</strong> or <strong>↑</strong> - Move forward</li>
+                    <li><strong>S</strong> or <strong>↓</strong> - Move backward</li>
+                    <li><strong>A</strong> or <strong>←</strong> - Move left</li>
+                    <li><strong>D</strong> or <strong>→</strong> - Move right</li>
+                    <li><strong>Space</strong> - Jump</li>
+                    <li><strong>Mouse Click</strong> - Move to location</li>
+                </ul>
+                
+                <h3>Action Controls</h3>
+                <ul>
+                    <li><strong>E</strong> - Interact with objects/NPCs</li>
+                    <li><strong>Ctrl</strong> - Attack</li>
+                    <li><strong>Enter</strong> - Open/close chat</li>
+                    <li><strong>Tab</strong> - Toggle player list details</li>
+                </ul>
+                
+                <h3>UI Controls</h3>
+                <ul>
+                    <li><strong>I</strong> - Open/close inventory</li>
+                    <li><strong>C</strong> - Open/close character screen</li>
+                    <li><strong>M</strong> - Open/close map</li>
+                    <li><strong>H</strong> - Open/close this help window</li>
+                    <li><strong>T</strong> - Show character token</li>
+                </ul>
+                
+                <p>Mobile users can use the on-screen joystick and buttons for controls.</p>
             </div>
-            <div class="key-row">
-                <span>Attack</span>
-                <span class="key">LMB / Ctrl</span>
-            </div>
-            <div class="key-row">
-                <span>Interact</span>
-                <span class="key">E</span>
-            </div>
-            <div class="key-row">
-                <span>Inventory</span>
-                <span class="key">I</span>
-            </div>
-            <div class="key-row">
-                <span>Character</span>
-                <span class="key">C</span>
-            </div>
-            <div class="key-row">
-                <span>Map</span>
-                <span class="key">M</span>
-            </div>
-            <div class="key-row">
-                <span>Chat</span>
-                <span class="key">Enter</span>
-            </div>
-            <button class="close-button">Close</button>
         </div>
     </div>
 
@@ -1526,7 +1524,12 @@
                     return;
                 }
                 
-                keysPressed[event.key.toLowerCase()] = true;
+                // Prevent browser extensions from intercepting keyboard events
+                event.stopPropagation();
+                
+                // Store key state using key code for better compatibility
+                const key = event.key.toLowerCase();
+                keysPressed[key] = true;
                 
                 // Tab key to toggle player list details
                 if (event.key === 'Tab') {
@@ -1546,7 +1549,7 @@
                 }
                 
                 // Interact with E key
-                if (event.key.toLowerCase() === 'e') {
+                if (key === 'e') {
                     performInteractAction();
                 }
                 
@@ -1564,32 +1567,36 @@
                     return;
                 }
                 
-                keysPressed[event.key.toLowerCase()] = false;
+                // Prevent browser extensions from intercepting keyboard events
+                event.stopPropagation();
+                
+                const key = event.key.toLowerCase();
+                keysPressed[key] = false;
                 
                 // Additional key actions
                 if (!isChatActive) {
                     // I key for inventory
-                    if (event.key === 'i' || event.key === 'I') {
+                    if (key === 'i') {
                         toggleInventory();
                     }
                     
                     // C key for character screen
-                    if (event.key === 'c' || event.key === 'C') {
+                    if (key === 'c') {
                         toggleCharacterScreen();
                     }
                     
                     // M key for map
-                    if (event.key === 'm' || event.key === 'M') {
+                    if (key === 'm') {
                         toggleMap();
                     }
                     
                     // T key for character token
-                    if (event.key === 't' || event.key === 'T') {
+                    if (key === 't') {
                         showTokenDialog();
                     }
                     
                     // H key for help
-                    if (event.key === 'h' || event.key === 'H') {
+                    if (key === 'h') {
                         toggleHelp();
                     }
                 }
@@ -1886,11 +1893,13 @@
         
         // Toggle inventory visibility
         function toggleInventory() {
-            inventory.classList.toggle('hidden');
+            const inventoryEl = document.getElementById('inventory');
+            inventoryEl.classList.toggle('hidden');
             
-            // If opened, update inventory UI
-            if (!inventory.classList.contains('hidden')) {
-                // TODO: Update inventory slots with actual items
+            if (!inventoryEl.classList.contains('hidden')) {
+                inventoryEl.style.display = 'block';
+            } else {
+                inventoryEl.style.display = 'none';
             }
         }
         
@@ -1899,9 +1908,10 @@
             const characterScreen = document.getElementById('character-screen');
             characterScreen.classList.toggle('hidden');
             
-            // If opened, update character stats
             if (!characterScreen.classList.contains('hidden')) {
-                updateCharacterStats();
+                characterScreen.style.display = 'block';
+            } else {
+                characterScreen.style.display = 'none';
             }
         }
         
@@ -1935,9 +1945,13 @@
             const mapScreen = document.getElementById('map-screen');
             mapScreen.classList.toggle('hidden');
             
-            // If opened, draw map
             if (!mapScreen.classList.contains('hidden')) {
+                mapScreen.style.display = 'block';
+                
+                // Refresh map if needed
                 drawMap();
+            } else {
+                mapScreen.style.display = 'none';
             }
         }
         
@@ -2079,6 +2093,13 @@
         function toggleHelp() {
             const keyBindings = document.getElementById('key-bindings');
             keyBindings.classList.toggle('hidden');
+            
+            // If opened, ensure it's visible
+            if (!keyBindings.classList.contains('hidden')) {
+                keyBindings.style.display = 'block';
+            } else {
+                keyBindings.style.display = 'none';
+            }
         }
         
         // Toggle chat visibility
@@ -2242,13 +2263,15 @@
                 
                 // Update controls
                 if (controls) {
+                    // Calculate movement direction from joystick
+                    // Note: We reverse X for sidesteps and Z for forward/back
                     controls.moveDirection.x = joystickX;
                     controls.moveDirection.z = joystickY;
                 }
-            });
+            }, { passive: false });
             
             // Touch end
-            document.addEventListener('touchend', function() {
+            document.addEventListener('touchend', function(e) {
                 if (!active) return;
                 
                 active = false;
@@ -2267,7 +2290,7 @@
                     controls.moveDirection.x = 0;
                     controls.moveDirection.z = 0;
                 }
-            });
+            }, { passive: false });
         }
 
         // Animation loop
@@ -2277,18 +2300,26 @@
             const delta = clock.getDelta();
             gameState.gameTime += delta;
             
-            // Update controls
-            if (controls) controls.update(delta);
-            
-            // Periodically save character
-            if (gameState.gameTime - gameState.lastSaveTime > CONFIG.SAVE_INTERVAL / 1000) {
-                saveCharacter();
-                gameState.lastSaveTime = gameState.gameTime;
+            // Only update if player is logged in
+            if (isLoggedIn && playerMesh) {
+                // Update controls
+                if (controls) {
+                    controls.update(delta);
+                }
+                
+                // Send position updates to server at a reasonable interval (every 100ms)
+                if (gameState.gameTime - lastPositionUpdateTime > 0.1) {
+                    sendPositionUpdate();
+                    lastPositionUpdateTime = gameState.gameTime;
+                }
+                
+                // Render the scene
+                renderer.render(scene, camera);
             }
-            
-            // Render scene
-            renderer.render(scene, camera);
         }
+        
+        // Initialize game variables
+        let lastPositionUpdateTime = 0;
 
         // Window resize handler
         function onWindowResize() {
@@ -2393,9 +2424,12 @@
 
         // Show the character token dialog
         function showTokenDialog() {
-            const tokenText = document.getElementById('token-text');
-            tokenText.textContent = btoa(JSON.stringify(gameState.player));
-            showElement(reconnectToken);
+            if (isLoggedIn && gameState.player) {
+                const tokenModal = document.getElementById('reconnect-token');
+                const tokenText = document.getElementById('token-text');
+                tokenText.textContent = gameState.player.token;
+                showElement(tokenModal);
+            }
         }
 
         // Copy token to clipboard
@@ -2877,11 +2911,27 @@
         // Show element by removing hidden class
         function showElement(element) {
             element.classList.remove('hidden');
+            
+            // For modals and special UI elements that use display: none
+            if (element.id === 'character-screen' || 
+                element.id === 'map-screen' || 
+                element.id === 'key-bindings' || 
+                element.id === 'player-modal') {
+                element.style.display = 'block';
+            }
         }
 
         // Hide element by adding hidden class
         function hideElement(element) {
             element.classList.add('hidden');
+            
+            // For modals and special UI elements that use display: none
+            if (element.id === 'character-screen' || 
+                element.id === 'map-screen' || 
+                element.id === 'key-bindings' || 
+                element.id === 'player-modal') {
+                element.style.display = 'none';
+            }
         }
 
         // Show loading indicator
@@ -2919,81 +2969,91 @@
         // Hide player modal dialog
         function hidePlayerModal() {
             const playerModal = document.getElementById('player-modal');
-            hideElement(playerModal);
-            // Also make sure to reset the display style
+            playerModal.classList.add('hidden');
             playerModal.style.display = 'none';
         }
 
         // Make an element draggable on touch devices
         function makeElementDraggable(element) {
-            if (!element) return;
-            
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            const header = element.querySelector('h2, h3') || element;
             
-            if (header) {
-                header.style.cursor = 'move';
-                header.addEventListener('touchstart', dragMouseDown);
-                header.addEventListener('mousedown', dragMouseDown);
+            if (element.querySelector('.modal-header')) {
+                // If present, the header is where you move the element from
+                element.querySelector('.modal-header').onmousedown = dragMouseDown;
+                element.querySelector('.modal-header').ontouchstart = dragTouchStart;
+            } else {
+                // Otherwise, move the element from anywhere inside the element
+                element.onmousedown = dragMouseDown;
+                element.ontouchstart = dragTouchStart;
             }
             
             function dragMouseDown(e) {
+                e = e || window.event;
                 e.preventDefault();
-                
-                // Get touch or mouse position
-                if (e.type === 'touchstart') {
-                    pos3 = e.touches[0].clientX;
-                    pos4 = e.touches[0].clientY;
-                } else {
-                    pos3 = e.clientX;
-                    pos4 = e.clientY;
-                }
-                
-                // Add event listeners for dragging and releasing
-                document.addEventListener('touchmove', elementDrag);
-                document.addEventListener('touchend', closeDragElement);
-                document.addEventListener('mousemove', elementDrag);
-                document.addEventListener('mouseup', closeDragElement);
+                // Get the mouse cursor position at startup
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                // Call a function whenever the cursor moves
+                document.onmousemove = elementDrag;
+            }
+            
+            function dragTouchStart(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // Get the touch position at startup
+                pos3 = e.touches[0].clientX;
+                pos4 = e.touches[0].clientY;
+                document.ontouchend = closeDragElement;
+                // Call a function whenever the finger moves
+                document.ontouchmove = elementTouchDrag;
             }
             
             function elementDrag(e) {
+                e = e || window.event;
                 e.preventDefault();
-                
-                // Calculate new position
-                if (e.type === 'touchmove') {
-                    pos1 = pos3 - e.touches[0].clientX;
-                    pos2 = pos4 - e.touches[0].clientY;
-                    pos3 = e.touches[0].clientX;
-                    pos4 = e.touches[0].clientY;
-                } else {
-                    pos1 = pos3 - e.clientX;
-                    pos2 = pos4 - e.clientY;
-                    pos3 = e.clientX;
-                    pos4 = e.clientY;
-                }
-                
+                // Calculate the new cursor position
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                // Set the element's new position
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+            
+            function elementTouchDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // Calculate the new touch position
+                pos1 = pos3 - e.touches[0].clientX;
+                pos2 = pos4 - e.touches[0].clientY;
+                pos3 = e.touches[0].clientX;
+                pos4 = e.touches[0].clientY;
                 // Set the element's new position
                 element.style.top = (element.offsetTop - pos2) + "px";
                 element.style.left = (element.offsetLeft - pos1) + "px";
             }
             
             function closeDragElement() {
-                // Remove event listeners
-                document.removeEventListener('touchmove', elementDrag);
-                document.removeEventListener('touchend', closeDragElement);
-                document.removeEventListener('mousemove', elementDrag);
-                document.removeEventListener('mouseup', closeDragElement);
+                // Stop moving when mouse/touch is released
+                document.onmouseup = null;
+                document.onmousemove = null;
+                document.ontouchend = null;
+                document.ontouchmove = null;
             }
         }
 
         // Toggle player modal visibility
         function togglePlayerModal() {
             const playerModal = document.getElementById('player-modal');
+            playerModal.classList.toggle('hidden');
             
-            if (playerModal.classList.contains('hidden')) {
-                showPlayerModal();
+            if (!playerModal.classList.contains('hidden')) {
+                playerModal.style.display = 'block';
+                updatePlayerList();
             } else {
-                hidePlayerModal();
+                playerModal.style.display = 'none';
             }
         }
 
