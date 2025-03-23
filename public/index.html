@@ -529,8 +529,14 @@
                 top: 2px;
             }
             .ui-buttons {
+                position: fixed;
                 top: 10px;
                 right: 10px;
+                display: flex;
+                flex-wrap: wrap;
+                width: 130px;
+                gap: 5px;
+                z-index: 20;
             }
             .action-buttons {
                 bottom: 30px;
@@ -1524,8 +1530,10 @@
                     return;
                 }
                 
-                // Prevent browser extensions from intercepting keyboard events
-                event.stopPropagation();
+                // Only stop propagation if needed for non-navigation keys
+                if (!['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                    event.stopPropagation();
+                }
                 
                 // Store key state using key code for better compatibility
                 const key = event.key.toLowerCase();
@@ -1557,6 +1565,9 @@
                 if (event.key === 'Control') {
                     performAttackAction();
                 }
+                
+                // Debug keyboard events
+                console.log('Key pressed:', key);
             });
             
             document.addEventListener('keyup', (event) => {
@@ -1567,8 +1578,10 @@
                     return;
                 }
                 
-                // Prevent browser extensions from intercepting keyboard events
-                event.stopPropagation();
+                // Only stop propagation if needed for non-navigation keys
+                if (!['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                    event.stopPropagation();
+                }
                 
                 const key = event.key.toLowerCase();
                 keysPressed[key] = false;
@@ -1600,6 +1613,9 @@
                         toggleHelp();
                     }
                 }
+                
+                // Debug keyboard events
+                console.log('Key released:', key);
             });
             
             // Setup mouse controls
@@ -1767,7 +1783,11 @@
                 
                 update: function(delta) {
                     // Skip movement if chat is active or any modal is open
-                    if (this.isChatActive() || isModalOpen()) return;
+                    if (this.isChatActive() || isModalOpen()) {
+                        // Debug when movement is skipped
+                        console.log('Movement skipped - Chat active:', this.isChatActive(), 'Modal open:', isModalOpen());
+                        return;
+                    }
                     
                     const moveDirection = new THREE.Vector3();
                     
@@ -1776,6 +1796,33 @@
                     if (this.keysPressed['s'] || this.keysPressed['arrowdown']) moveDirection.z += 1;
                     if (this.keysPressed['a'] || this.keysPressed['arrowleft']) moveDirection.x -= 1;
                     if (this.keysPressed['d'] || this.keysPressed['arrowright']) moveDirection.x += 1;
+                    
+                    // Debug log if we have keyboard input
+                    if (this.keysPressed['w'] || this.keysPressed['arrowup'] || 
+                        this.keysPressed['s'] || this.keysPressed['arrowdown'] || 
+                        this.keysPressed['a'] || this.keysPressed['arrowleft'] || 
+                        this.keysPressed['d'] || this.keysPressed['arrowright']) {
+                        console.log('Keyboard input detected:', 
+                                   'W:', this.keysPressed['w'], 
+                                   'A:', this.keysPressed['a'], 
+                                   'S:', this.keysPressed['s'], 
+                                   'D:', this.keysPressed['d'],
+                                   'Arrows:', this.keysPressed['arrowup'], this.keysPressed['arrowdown'], 
+                                   this.keysPressed['arrowleft'], this.keysPressed['arrowright']);
+                    }
+                    
+                    // If we have input from the virtual joystick, use it instead
+                    // Only override if there's actual joystick movement
+                    if (this.moveDirection.length() > 0) {
+                        // On mobile, prefer the joystick input over keyboard
+                        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                            moveDirection.copy(this.moveDirection);
+                        } 
+                        // On desktop, combine with keyboard input (keyboard takes priority if both are used)
+                        else if (moveDirection.length() === 0) {
+                            moveDirection.copy(this.moveDirection);
+                        }
+                    }
                     
                     // Handle target position movement (from mouse clicks)
                     if (targetPosition) {
@@ -1885,10 +1932,17 @@
                 document.getElementById('inventory'),
                 document.getElementById('player-modal'),
                 document.getElementById('reconnect-token'),
-                document.getElementById('key-bindings')
+                document.getElementById('key-bindings'),
+                document.getElementById('character-creation')
             ];
             
-            return modalElements.some(elem => !elem.classList.contains('hidden'));
+            return modalElements.some(elem => {
+                // Element is visible if it doesn't have the 'hidden' class AND
+                // either has no display style or display is not 'none'
+                return elem && 
+                       !elem.classList.contains('hidden') && 
+                       (elem.style.display === '' || elem.style.display !== 'none');
+            });
         }
         
         // Toggle inventory visibility
