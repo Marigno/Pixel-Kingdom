@@ -168,12 +168,13 @@
             position: absolute;
             bottom: 10px;
             right: 10px;
-            background-color: rgba(0, 0, 0, 0.6);
+            background-color: rgba(0, 0, 0, 0.8);
             padding: 10px;
             border-radius: 5px;
-            width: 200px;
-            height: 150px;
-            z-index: 10;
+            width: 300px;
+            height: 250px;
+            z-index: 20;
+            pointer-events: auto;
         }
         .inventory-slot {
             display: inline-block;
@@ -333,8 +334,11 @@
             top: 10px;
             right: 10px;
             display: flex;
+            flex-wrap: wrap;
+            width: 150px;
             gap: 10px;
             z-index: 20;
+            justify-content: flex-end;
         }
         
         .ui-button {
@@ -385,6 +389,93 @@
             z-index: 10;
         }
         
+        /* Character screen */
+        #character-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 500px;
+            height: 80%;
+            max-height: 600px;
+            z-index: 30;
+            display: none;
+            pointer-events: auto;
+            border: 2px solid #553388;
+            overflow: auto;
+        }
+        
+        #character-screen h2 {
+            text-align: center;
+            color: #aaccff;
+            margin-top: 0;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .stat-name {
+            font-weight: bold;
+            color: #aaffcc;
+        }
+        
+        .stat-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #ffaaaa;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        
+        /* Map screen */
+        #map-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 800px;
+            height: 80%;
+            max-height: 600px;
+            z-index: 25;
+            display: none;
+            pointer-events: auto;
+            border: 2px solid #553388;
+        }
+        
+        #map-canvas {
+            width: 100%;
+            height: calc(100% - 40px);
+            background-color: #243447;
+            border-radius: 5px;
+        }
+        
+        .map-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #ffaaaa;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        
         /* Media Queries for Mobile */
         @media (max-width: 768px) {
             #mobile-controls {
@@ -409,8 +500,8 @@
                 width: 100px;
             }
             #inventory {
-                width: 200px;
-                height: 150px;
+                width: 300px;
+                height: 250px;
                 position: fixed;
                 top: 50%;
                 left: 50%;
@@ -435,6 +526,16 @@
                 bottom: 30px;
                 right: 20px;
                 flex-direction: row;
+                gap: 10px;
+            }
+            .mobile-button {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            #character-screen, #map-screen {
+                width: 90%;
+                height: 90%;
             }
         }
 
@@ -512,6 +613,51 @@
         #player-modal .close-button:hover {
             background-color: #6644aa;
         }
+
+        /* Key bindings help */
+        #key-bindings {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 999;
+            display: none;
+            pointer-events: auto;
+        }
+        
+        #key-bindings h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+        
+        .key-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+        }
+        
+        .key {
+            background-color: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #666;
+            margin-left: 10px;
+        }
+        
+        #key-bindings .close-button {
+            width: 100%;
+            margin-top: 10px;
+            background-color: #553388;
+            border: none;
+            color: white;
+            padding: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -568,14 +714,97 @@
 
         <div id="inventory" class="hidden">
             <h3>Inventory</h3>
-            <div class="inventory-slot"></div>
-            <div class="inventory-slot"></div>
-            <div class="inventory-slot"></div>
-            <div class="inventory-slot"></div>
-            <div class="inventory-slot"></div>
-            <div class="inventory-slot"></div>
-            <div class="inventory-slot"></div>
-            <div class="inventory-slot"></div>
+            <div class="inventory-slots">
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+                <div class="inventory-slot"></div>
+            </div>
+            <button id="close-inventory" class="close-button">Close</button>
+        </div>
+
+        <div id="character-screen" class="hidden">
+            <h2>Character Details</h2>
+            <button class="stat-close">&times;</button>
+            
+            <div class="stat-row">
+                <span class="stat-name">Name:</span>
+                <span id="stat-name">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Class:</span>
+                <span id="stat-class">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Level:</span>
+                <span id="stat-level">1</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Experience:</span>
+                <span id="stat-exp">0/100</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Health:</span>
+                <span id="stat-health">100/100</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Mana:</span>
+                <span id="stat-mana">50/50</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Strength:</span>
+                <span id="stat-str">10</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Dexterity:</span>
+                <span id="stat-dex">10</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Intelligence:</span>
+                <span id="stat-int">10</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Vitality:</span>
+                <span id="stat-vit">10</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Attack Power:</span>
+                <span id="stat-atk">15</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Defense:</span>
+                <span id="stat-def">5</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Magic Power:</span>
+                <span id="stat-mag">10</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Created:</span>
+                <span id="stat-created">-</span>
+            </div>
+        </div>
+
+        <div id="map-screen" class="hidden">
+            <h2>World Map</h2>
+            <button class="map-close">&times;</button>
+            <canvas id="map-canvas"></canvas>
         </div>
 
         <div id="chat" class="hidden">
@@ -590,13 +819,17 @@
                 <div class="joystick-handle" id="joystick-handle"></div>
             </div>
             <div class="action-buttons">
-                <div id="btn-action" class="mobile-button">⚔️</div>
+                <div id="btn-attack" class="mobile-button">⚔️</div>
+                <div id="btn-jump" class="mobile-button">⬆️</div>
                 <div id="btn-interact" class="mobile-button">👋</div>
             </div>
             <div class="ui-buttons">
                 <div id="btn-chat" class="ui-button">💬</div>
                 <div id="btn-inventory" class="ui-button">🎒</div>
                 <div id="btn-players" class="ui-button">👥<div id="btn-players-count">1</div></div>
+                <div id="btn-character" class="ui-button">👤</div>
+                <div id="btn-map" class="ui-button">🗺️</div>
+                <div id="btn-help" class="ui-button">❓</div>
             </div>
         </div>
         
@@ -605,6 +838,43 @@
         <div id="player-modal" class="hidden">
             <h3>Players Online: <span id="modal-online-count">0</span></h3>
             <div id="player-modal-list"></div>
+            <button class="close-button">Close</button>
+        </div>
+
+        <div id="key-bindings" class="hidden">
+            <h3>Key Bindings</h3>
+            <div class="key-row">
+                <span>Movement</span>
+                <span class="key">WASD</span>
+            </div>
+            <div class="key-row">
+                <span>Jump</span>
+                <span class="key">Space</span>
+            </div>
+            <div class="key-row">
+                <span>Attack</span>
+                <span class="key">LMB / Ctrl</span>
+            </div>
+            <div class="key-row">
+                <span>Interact</span>
+                <span class="key">E</span>
+            </div>
+            <div class="key-row">
+                <span>Inventory</span>
+                <span class="key">I</span>
+            </div>
+            <div class="key-row">
+                <span>Character</span>
+                <span class="key">C</span>
+            </div>
+            <div class="key-row">
+                <span>Map</span>
+                <span class="key">M</span>
+            </div>
+            <div class="key-row">
+                <span>Chat</span>
+                <span class="key">Enter</span>
+            </div>
             <button class="close-button">Close</button>
         </div>
     </div>
@@ -683,60 +953,130 @@
                         Math.pow(position.z - obstacle.position.z, 2)
                     );
                     
-                    if (distance < (radius + obstacle.radius)) {
-                        return true; // Collision with obstacle
+                    // Adjust collision radius based on obstacle type for better player proximity
+                    let adjustedRadius = obstacle.radius;
+                    if (obstacle.type === 'tree') {
+                        adjustedRadius = obstacle.radius * 0.7; // Allow closer approach to trees
+                    } else if (obstacle.type === 'house') {
+                        adjustedRadius = obstacle.radius * 0.8; // Allow closer approach to houses
+                    }
+                    
+                    if (distance < (radius + adjustedRadius)) {
+                        return {
+                            collides: true,
+                            obstacle: obstacle,
+                            distance: distance,
+                            direction: {
+                                x: position.x - obstacle.position.x,
+                                z: position.z - obstacle.position.z
+                            }
+                        };
                     }
                 }
                 
-                return false; // No collision
+                return { collides: false }; // No collision
             },
             
-            // Get valid position closest to target
+            // Get valid position closest to target with improved sliding
             getValidPosition: function(current, target, radius = 0.5) {
                 // If target is valid, return it directly
-                if (!this.checkCollision(target, radius)) {
+                const collision = this.checkCollision(target, radius);
+                if (!collision.collides) {
                     return target;
                 }
                 
-                // Otherwise, find the furthest valid position along the path
-                const direction = new THREE.Vector3(
-                    target.x - current.x,
-                    target.y - current.y,
-                    target.z - current.z
-                ).normalize();
-                
-                const maxDistance = Math.sqrt(
-                    Math.pow(target.x - current.x, 2) + 
-                    Math.pow(target.z - current.z, 2)
-                );
-                
-                let validPosition = {
-                    x: current.x,
-                    y: current.y,
-                    z: current.z
-                };
-                
-                // Binary search for the furthest valid position
-                let minDist = 0;
-                let maxDist = maxDistance;
-                
-                for (let i = 0; i < 10; i++) { // 10 iterations should be enough
-                    const testDist = (minDist + maxDist) / 2;
-                    const testPos = {
-                        x: current.x + direction.x * testDist,
-                        y: current.y,
-                        z: current.z + direction.z * testDist
+                // For boundary collisions, just clamp to the bounds
+                if (!this.isInBounds(target)) {
+                    return {
+                        x: Math.max(this.mapBounds.minX + radius, Math.min(this.mapBounds.maxX - radius, target.x)),
+                        y: target.y,
+                        z: Math.max(this.mapBounds.minZ + radius, Math.min(this.mapBounds.maxZ - radius, target.z))
                     };
-                    
-                    if (this.checkCollision(testPos, radius)) {
-                        maxDist = testDist;
-                    } else {
-                        minDist = testDist;
-                        validPosition = testPos;
-                    }
                 }
                 
-                return validPosition;
+                // For obstacle collisions, implement improved sliding behavior
+                const obstacle = collision.obstacle;
+                const dirX = target.x - current.x;
+                const dirZ = target.z - current.z;
+                const dirLength = Math.sqrt(dirX * dirX + dirZ * dirZ);
+                
+                if (dirLength < 0.001) {
+                    return current; // No movement, return current position
+                }
+                
+                // Calculate normalized movement direction
+                const normDirX = dirX / dirLength;
+                const normDirZ = dirZ / dirLength;
+                
+                // Get vector from obstacle to target position
+                const obstacleToTarget = {
+                    x: target.x - obstacle.position.x,
+                    z: target.z - obstacle.position.z
+                };
+                
+                // Normalize this vector
+                const obstacleDistance = Math.sqrt(
+                    obstacleToTarget.x * obstacleToTarget.x + 
+                    obstacleToTarget.z * obstacleToTarget.z
+                );
+                
+                const normObstacleToTarget = {
+                    x: obstacleToTarget.x / obstacleDistance,
+                    z: obstacleToTarget.z / obstacleDistance
+                };
+                
+                // Calculate tangent direction for improved sliding
+                const tangentX = -normObstacleToTarget.z;
+                const tangentZ = normObstacleToTarget.x;
+                
+                // Calculate dot product to see how much we're moving along the tangent
+                const dotProduct = normDirX * tangentX + normDirZ * tangentZ;
+                
+                // Apply enhanced sliding - scale based on how much we're already moving in the tangent direction
+                const slideFactorX = tangentX * Math.abs(dotProduct) * 1.5; // Increased sliding factor
+                const slideFactorZ = tangentZ * Math.abs(dotProduct) * 1.5;
+                
+                // Adjust collision distance based on obstacle type
+                let adjustedRadius = radius + obstacle.radius;
+                if (obstacle.type === 'tree') {
+                    adjustedRadius *= 0.7; // Allow even closer approach to trees
+                } else if (obstacle.type === 'house') {
+                    adjustedRadius *= 0.75; // Allow even closer approach to houses
+                }
+                
+                // Calculate new position with improved sliding behavior
+                const minDistance = adjustedRadius;
+                const pushOutDistance = minDistance - collision.distance;
+                
+                // Push out along obstacle direction
+                const pushX = normObstacleToTarget.x * pushOutDistance;
+                const pushZ = normObstacleToTarget.z * pushOutDistance;
+                
+                // Combine push-out and sliding with higher weight to sliding
+                let resultX = current.x + (dirX * 0.4) + (slideFactorX * dirLength) + pushX;
+                let resultZ = current.z + (dirZ * 0.4) + (slideFactorZ * dirLength) + pushZ;
+                
+                // Check if the new position is valid
+                const newPos = {
+                    x: resultX,
+                    y: target.y,
+                    z: resultZ
+                };
+                
+                // If the new position is still invalid, just push out from the obstacle
+                if (this.checkCollision(newPos, radius).collides) {
+                    const safeDistance = radius + obstacle.radius * 0.8 + 0.05; // Reduced safe distance
+                    const angle = Math.atan2(obstacleToTarget.z, obstacleToTarget.x);
+                    
+                    resultX = obstacle.position.x + Math.cos(angle) * safeDistance;
+                    resultZ = obstacle.position.z + Math.sin(angle) * safeDistance;
+                }
+                
+                return {
+                    x: resultX,
+                    y: target.y,
+                    z: resultZ
+                };
             }
         };
 
@@ -1153,6 +1493,9 @@
                 keysPressed['arrowdown'] = false;
                 keysPressed['arrowleft'] = false;
                 keysPressed['arrowright'] = false;
+                keysPressed[' '] = false;
+                keysPressed['control'] = false;
+                keysPressed['e'] = false;
             });
             
             chatInput.addEventListener('blur', function() {
@@ -1178,13 +1521,24 @@
                     playerList.classList.toggle('expanded');
                 }
                 
-                // Jump action (J key)
-                if (event.key.toLowerCase() === 'j' && !isJumping) {
+                // Enter key to open chat
+                if (event.key === 'Enter') {
+                    toggleChat();
+                    chatInput.focus();
+                }
+                
+                // Space key for jumping
+                if (event.key === ' ' && !isJumping) {
                     performJumpAction();
                 }
                 
-                // Attack action (K key)
-                if (event.key.toLowerCase() === 'k') {
+                // Interact with E key
+                if (event.key.toLowerCase() === 'e') {
+                    performInteractAction();
+                }
+                
+                // Left Control for attack
+                if (event.key === 'Control') {
                     performAttackAction();
                 }
             });
@@ -1193,7 +1547,7 @@
                 // Don't process any movement keys when typing in chat
                 if (isChatActive && 
                    ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 
-                    'c', 'i', 't', ' ', 'space', 'j', 'k'].includes(event.key.toLowerCase())) {
+                    ' ', 'space', 'control', 'e'].includes(event.key.toLowerCase())) {
                     return;
                 }
                 
@@ -1201,53 +1555,103 @@
                 
                 // Additional key actions
                 if (!isChatActive) {
-                    if (event.key === 'c' || event.key === 'C') {
-                        toggleChat();
-                    }
-                    
+                    // I key for inventory
                     if (event.key === 'i' || event.key === 'I') {
                         toggleInventory();
                     }
                     
+                    // C key for character screen
+                    if (event.key === 'c' || event.key === 'C') {
+                        toggleCharacterScreen();
+                    }
+                    
+                    // M key for map
+                    if (event.key === 'm' || event.key === 'M') {
+                        toggleMap();
+                    }
+                    
+                    // T key for character token
                     if (event.key === 't' || event.key === 'T') {
                         showTokenDialog();
+                    }
+                    
+                    // H key for help
+                    if (event.key === 'h' || event.key === 'H') {
+                        toggleHelp();
                     }
                 }
             });
             
             // Setup mouse controls
             renderer.domElement.addEventListener('click', (event) => {
-                if (isChatActive) return;
+                if (isChatActive || isModalOpen()) return;
                 
-                // Calculate mouse position in normalized device coordinates (-1 to +1)
-                const mouse = new THREE.Vector2(
-                    (event.clientX / window.innerWidth) * 2 - 1,
-                    -(event.clientY / window.innerHeight) * 2 + 1
-                );
-                
-                // Create raycaster
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(mouse, camera);
-                
-                // Find intersections with the ground plane
-                const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-                const targetPoint = new THREE.Vector3();
-                raycaster.ray.intersectPlane(groundPlane, targetPoint);
-                
-                // Set target position
-                targetPosition = {
-                    x: targetPoint.x,
-                    y: playerMesh.position.y,
-                    z: targetPoint.z
-                };
-                
-                // Turn player towards the clicked point immediately
-                const dx = targetPosition.x - playerMesh.position.x;
-                const dz = targetPosition.z - playerMesh.position.z;
-                if (Math.abs(dx) > 0.01 || Math.abs(dz) > 0.01) {
-                    playerMesh.rotation.y = Math.atan2(dx, dz);
+                // Check if left mouse button
+                if (event.button === 0) {
+                    // Calculate mouse position in normalized device coordinates (-1 to +1)
+                    const mouse = new THREE.Vector2(
+                        (event.clientX / window.innerWidth) * 2 - 1,
+                        -(event.clientY / window.innerHeight) * 2 + 1
+                    );
+                    
+                    // Create raycaster
+                    const raycaster = new THREE.Raycaster();
+                    raycaster.setFromCamera(mouse, camera);
+                    
+                    // Find intersections with the ground plane
+                    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+                    const targetPoint = new THREE.Vector3();
+                    raycaster.ray.intersectPlane(groundPlane, targetPoint);
+                    
+                    // Check if Control key is pressed for attack
+                    if (event.ctrlKey || keysPressed['control']) {
+                        performAttackAction();
+                    } else {
+                        // Set target position
+                        targetPosition = {
+                            x: targetPoint.x,
+                            y: playerMesh.position.y,
+                            z: targetPoint.z
+                        };
+                        
+                        // Turn player towards the clicked point immediately
+                        const dx = targetPosition.x - playerMesh.position.x;
+                        const dz = targetPosition.z - playerMesh.position.z;
+                        if (Math.abs(dx) > 0.01 || Math.abs(dz) > 0.01) {
+                            playerMesh.rotation.y = Math.atan2(dx, dz);
+                        }
+                        
+                        // Visual feedback for click
+                        const clickIndicator = document.createElement('div');
+                        clickIndicator.textContent = '•';
+                        clickIndicator.style.position = 'absolute';
+                        clickIndicator.style.top = event.clientY + 'px';
+                        clickIndicator.style.left = event.clientX + 'px';
+                        clickIndicator.style.color = '#ffffff';
+                        clickIndicator.style.fontSize = '24px';
+                        clickIndicator.style.fontWeight = 'bold';
+                        clickIndicator.style.transform = 'translate(-50%, -50%)';
+                        clickIndicator.style.pointerEvents = 'none';
+                        clickIndicator.style.zIndex = '100';
+                        clickIndicator.style.opacity = '1';
+                        document.body.appendChild(clickIndicator);
+                        
+                        // Fade out and remove
+                        let opacity = 1;
+                        const fadeInterval = setInterval(() => {
+                            opacity -= 0.1;
+                            clickIndicator.style.opacity = opacity;
+                            if (opacity <= 0) {
+                                clearInterval(fadeInterval);
+                                document.body.removeChild(clickIndicator);
+                            }
+                        }, 50);
+                    }
                 }
             });
+            
+            // Setup UI element event listeners
+            setupUIListeners();
             
             // Function to perform jump action
             function performJumpAction() {
@@ -1305,6 +1709,32 @@
                 console.log('Attack action performed');
             }
             
+            // Function to perform interact action
+            function performInteractAction() {
+                // Visual feedback for interaction
+                const interactIndicator = document.createElement('div');
+                interactIndicator.textContent = '👋 Interact';
+                interactIndicator.style.position = 'absolute';
+                interactIndicator.style.top = '50%';
+                interactIndicator.style.left = '50%';
+                interactIndicator.style.transform = 'translate(-50%, -50%)';
+                interactIndicator.style.color = '#33cc33';
+                interactIndicator.style.fontSize = '24px';
+                interactIndicator.style.fontWeight = 'bold';
+                interactIndicator.style.textShadow = '0 0 5px #000';
+                interactIndicator.style.pointerEvents = 'none';
+                interactIndicator.style.zIndex = '100';
+                document.body.appendChild(interactIndicator);
+                
+                // Remove after short duration
+                setTimeout(() => {
+                    document.body.removeChild(interactIndicator);
+                }, 500);
+                
+                // TODO: Implement actual interact logic
+                console.log('Interact action performed');
+            }
+            
             // Setup mobile controls
             setupMobileControls();
             
@@ -1316,8 +1746,8 @@
                 speed: CONFIG.MOVEMENT_SPEED,
                 
                 update: function(delta) {
-                    // Skip movement if chat is active
-                    if (this.isChatActive()) return;
+                    // Skip movement if chat is active or any modal is open
+                    if (this.isChatActive() || isModalOpen()) return;
                     
                     const moveDirection = new THREE.Vector3();
                     
@@ -1389,6 +1819,263 @@
             };
         }
         
+        // Setup UI event listeners
+        function setupUIListeners() {
+            // Character screen
+            const characterScreen = document.getElementById('character-screen');
+            const statClose = document.querySelector('.stat-close');
+            
+            statClose.addEventListener('click', () => {
+                hideElement(characterScreen);
+            });
+            
+            // Map screen
+            const mapScreen = document.getElementById('map-screen');
+            const mapClose = document.querySelector('.map-close');
+            
+            mapClose.addEventListener('click', () => {
+                hideElement(mapScreen);
+            });
+            
+            // Inventory close button
+            const closeInventory = document.getElementById('close-inventory');
+            closeInventory.addEventListener('click', () => {
+                hideElement(inventory);
+            });
+            
+            // Help screen
+            const keyBindings = document.getElementById('key-bindings');
+            const helpCloseBtn = keyBindings.querySelector('.close-button');
+            
+            helpCloseBtn.addEventListener('click', () => {
+                hideElement(keyBindings);
+            });
+            
+            // Allow player list to toggle on click/tap in desktop mode
+            playerList.addEventListener('click', () => {
+                playerList.classList.toggle('expanded');
+            });
+        }
+        
+        // Check if any modal window is open
+        function isModalOpen() {
+            const modalElements = [
+                document.getElementById('character-screen'),
+                document.getElementById('map-screen'),
+                document.getElementById('inventory'),
+                document.getElementById('player-modal'),
+                document.getElementById('reconnect-token'),
+                document.getElementById('key-bindings')
+            ];
+            
+            return modalElements.some(elem => !elem.classList.contains('hidden'));
+        }
+        
+        // Toggle inventory visibility
+        function toggleInventory() {
+            inventory.classList.toggle('hidden');
+            
+            // If opened, update inventory UI
+            if (!inventory.classList.contains('hidden')) {
+                // TODO: Update inventory slots with actual items
+            }
+        }
+        
+        // Toggle character screen visibility
+        function toggleCharacterScreen() {
+            const characterScreen = document.getElementById('character-screen');
+            characterScreen.classList.toggle('hidden');
+            
+            // If opened, update character stats
+            if (!characterScreen.classList.contains('hidden')) {
+                updateCharacterStats();
+            }
+        }
+        
+        // Update character stats in the character screen
+        function updateCharacterStats() {
+            if (!gameState.player) return;
+            
+            document.getElementById('stat-name').textContent = gameState.player.name || '-';
+            document.getElementById('stat-class').textContent = gameState.player.class || '-';
+            document.getElementById('stat-level').textContent = gameState.player.level || '1';
+            document.getElementById('stat-exp').textContent = `${gameState.player.experience || 0}/100`;
+            document.getElementById('stat-health').textContent = `${gameState.player.health || 100}/${gameState.player.maxHealth || 100}`;
+            document.getElementById('stat-mana').textContent = `${gameState.player.mana || 50}/${gameState.player.maxMana || 50}`;
+            
+            // Default values for stats if not present
+            document.getElementById('stat-str').textContent = gameState.player.strength || '10';
+            document.getElementById('stat-dex').textContent = gameState.player.dexterity || '10';
+            document.getElementById('stat-int').textContent = gameState.player.intelligence || '10';
+            document.getElementById('stat-vit').textContent = gameState.player.vitality || '10';
+            document.getElementById('stat-atk').textContent = gameState.player.attackPower || '15';
+            document.getElementById('stat-def').textContent = gameState.player.defense || '5';
+            document.getElementById('stat-mag').textContent = gameState.player.magicPower || '10';
+            
+            // Format creation date
+            const created = gameState.player.created ? new Date(gameState.player.created).toLocaleString() : '-';
+            document.getElementById('stat-created').textContent = created;
+        }
+        
+        // Toggle map visibility
+        function toggleMap() {
+            const mapScreen = document.getElementById('map-screen');
+            mapScreen.classList.toggle('hidden');
+            
+            // If opened, draw map
+            if (!mapScreen.classList.contains('hidden')) {
+                drawMap();
+            }
+        }
+        
+        // Draw world map
+        function drawMap() {
+            const canvas = document.getElementById('map-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas dimensions
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            
+            // Clear the canvas
+            ctx.fillStyle = '#243447';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#334455';
+            ctx.lineWidth = 1;
+            
+            const gridSize = 20;
+            const gridCount = Math.ceil(CONFIG.WORLD_SIZE / gridSize);
+            
+            // Calculate scaling factor
+            const scale = Math.min(canvas.width, canvas.height) / CONFIG.WORLD_SIZE;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Draw grid lines
+            ctx.beginPath();
+            for (let i = -gridCount; i <= gridCount; i++) {
+                const pos = i * gridSize * scale;
+                
+                // Vertical lines
+                ctx.moveTo(centerX + pos, 0);
+                ctx.lineTo(centerX + pos, canvas.height);
+                
+                // Horizontal lines
+                ctx.moveTo(0, centerY + pos);
+                ctx.lineTo(canvas.width, centerY + pos);
+            }
+            ctx.stroke();
+            
+            // Draw obstacles (trees, rocks, houses)
+            collisionSystem.obstacles.forEach(obstacle => {
+                const x = centerX + obstacle.position.x * scale;
+                const y = centerY + obstacle.position.z * scale;
+                
+                ctx.beginPath();
+                
+                if (obstacle.type === 'tree') {
+                    ctx.fillStyle = '#2D572C';
+                    ctx.arc(x, y, obstacle.radius * scale, 0, Math.PI * 2);
+                } else if (obstacle.type === 'rock') {
+                    ctx.fillStyle = '#888888';
+                    ctx.arc(x, y, obstacle.radius * scale, 0, Math.PI * 2);
+                } else if (obstacle.type === 'house') {
+                    ctx.fillStyle = '#DDCCAA';
+                    const size = obstacle.radius * 1.5 * scale;
+                    ctx.rect(x - size/2, y - size/2, size, size);
+                }
+                
+                ctx.fill();
+            });
+            
+            // Draw player position
+            if (gameState.player && playerMesh) {
+                const playerX = centerX + playerMesh.position.x * scale;
+                const playerY = centerY + playerMesh.position.z * scale;
+                
+                // Draw player position marker
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath();
+                ctx.arc(playerX, playerY, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw player direction
+                const dirLength = 10;
+                const dirX = Math.sin(playerMesh.rotation.y) * dirLength;
+                const dirY = Math.cos(playerMesh.rotation.y) * dirLength;
+                
+                ctx.strokeStyle = '#ffcc00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(playerX, playerY);
+                ctx.lineTo(playerX + dirX, playerY + dirY);
+                ctx.stroke();
+            }
+            
+            // Draw other players
+            for (const id in gameState.otherPlayers) {
+                const player = gameState.otherPlayers[id];
+                if (player.mesh) {
+                    const otherX = centerX + player.mesh.position.x * scale;
+                    const otherY = centerY + player.mesh.position.z * scale;
+                    
+                    ctx.fillStyle = '#33ccff';
+                    ctx.beginPath();
+                    ctx.arc(otherX, otherY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            // Draw legend
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(10, 10, 120, 100);
+            
+            ctx.fillStyle = '#ffcc00';
+            ctx.beginPath();
+            ctx.arc(20, 25, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.fillText('You', 35, 30);
+            
+            ctx.fillStyle = '#33ccff';
+            ctx.beginPath();
+            ctx.arc(20, 45, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('Other Players', 35, 50);
+            
+            ctx.fillStyle = '#2D572C';
+            ctx.beginPath();
+            ctx.arc(20, 65, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('Trees', 35, 70);
+            
+            ctx.fillStyle = '#888888';
+            ctx.beginPath();
+            ctx.arc(20, 85, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('Rocks', 35, 90);
+        }
+        
+        // Toggle help visibility
+        function toggleHelp() {
+            const keyBindings = document.getElementById('key-bindings');
+            keyBindings.classList.toggle('hidden');
+        }
+        
+        // Toggle chat visibility
+        function toggleChat() {
+            chatUI.classList.toggle('hidden');
+            if (!chatUI.classList.contains('hidden')) {
+                chatInput.focus();
+            }
+        }
+        
         // Setup mobile controls
         function setupMobileControls() {
             // Show mobile controls on touch devices
@@ -1402,194 +2089,91 @@
                 setupVirtualJoystick();
                 
                 // Setup action buttons
-                const btnAction = document.getElementById('btn-action');
+                const btnAttack = document.getElementById('btn-attack');
+                const btnJump = document.getElementById('btn-jump');
                 const btnInteract = document.getElementById('btn-interact');
                 const btnChat = document.getElementById('btn-chat');
                 const btnInventory = document.getElementById('btn-inventory');
                 const btnPlayers = document.getElementById('btn-players');
+                const btnCharacter = document.getElementById('btn-character');
+                const btnMap = document.getElementById('btn-map');
+                const btnHelp = document.getElementById('btn-help');
                 
-                // Action button - can be used for attacks or special actions
-                btnAction.addEventListener('touchstart', () => {
-                    // Example: trigger attack action
-                    console.log('Action button pressed');
+                // Attack button
+                btnAttack.addEventListener('touchstart', () => {
+                    console.log('Attack button pressed');
                     performAttackAction();
                 });
                 
-                // Interact button - for interacting with NPCs, items, etc.
-                btnInteract.addEventListener('touchstart', () => {
-                    // Example: trigger interaction with nearby object
-                    console.log('Interact button pressed');
+                // Jump button
+                btnJump.addEventListener('touchstart', () => {
+                    console.log('Jump button pressed');
                     performJumpAction();
                 });
                 
-                // Chat button
-                btnChat.addEventListener('touchend', toggleChat);
-                
-                // Inventory button
-                btnInventory.addEventListener('touchend', toggleInventory);
-                
-                // Players button (show player modal)
-                btnPlayers.addEventListener('touchend', showPlayerModal);
-                
-                // Set up player modal close button
-                document.querySelector('#player-modal .close-button').addEventListener('click', hidePlayerModal);
-                
-                // Allow player list to toggle on click/tap in desktop mode
-                playerList.addEventListener('click', () => {
-                    playerList.classList.toggle('expanded');
+                // Interact button
+                btnInteract.addEventListener('touchstart', () => {
+                    console.log('Interact button pressed');
+                    performInteractAction();
                 });
                 
-                // Make inventory and player modal draggable on mobile
-                makeElementDraggable(inventory);
+                // Chat button
+                btnChat.addEventListener('touchend', () => {
+                    toggleChat();
+                });
+                
+                // Inventory button
+                btnInventory.addEventListener('touchend', () => {
+                    toggleInventory();
+                });
+                
+                // Character button
+                btnCharacter.addEventListener('touchend', () => {
+                    toggleCharacterScreen();
+                });
+                
+                // Map button
+                btnMap.addEventListener('touchend', () => {
+                    toggleMap();
+                });
+                
+                // Help button
+                btnHelp.addEventListener('touchend', () => {
+                    toggleHelp();
+                });
+                
+                // Players button (show player modal)
+                btnPlayers.addEventListener('touchend', () => {
+                    togglePlayerModal();
+                });
+                
+                // Hide chat and inventory by default on mobile
+                hideElement(chatUI);
+                hideElement(inventory);
+                
+                // Set up player modal close button
+                document.querySelector('#player-modal .close-button').addEventListener('click', () => {
+                    hidePlayerModal();
+                });
+                
+                // Make modals draggable on mobile for better positioning
+                makeElementDraggable(document.getElementById('character-screen'));
+                makeElementDraggable(document.getElementById('map-screen'));
+                makeElementDraggable(document.getElementById('key-bindings'));
                 makeElementDraggable(document.getElementById('player-modal'));
+                makeElementDraggable(inventory);
             }
         }
         
-        // Setup virtual joystick
-        function setupVirtualJoystick() {
-            const joystickContainer = document.getElementById('joystick-container');
-            const joystickHandle = document.getElementById('joystick-handle');
+        // Toggle player modal visibility
+        function togglePlayerModal() {
+            const playerModal = document.getElementById('player-modal');
             
-            let isDragging = false;
-            let centerX, centerY, maxDistance;
-            let currentX = 0;
-            let currentY = 0;
-            
-            // Helper function to calculate distance between points
-            function distance(x1, y1, x2, y2) {
-                return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            if (playerModal.classList.contains('hidden')) {
+                showPlayerModal();
+            } else {
+                hidePlayerModal();
             }
-            
-            // Initialize joystick when touched
-            joystickContainer.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                
-                const rect = joystickContainer.getBoundingClientRect();
-                centerX = rect.left + rect.width / 2;
-                centerY = rect.top + rect.height / 2;
-                maxDistance = rect.width / 2; // Maximum distance joystick can move
-                
-                updateJoystickPosition(e.touches[0].clientX, e.touches[0].clientY);
-                isDragging = true;
-            });
-            
-            // Handle joystick movement
-            document.addEventListener('touchmove', function(e) {
-                if (!isDragging) return;
-                e.preventDefault();
-                updateJoystickPosition(e.touches[0].clientX, e.touches[0].clientY);
-            });
-            
-            // Handle touch end - reset joystick
-            document.addEventListener('touchend', function(e) {
-                if (!isDragging) return;
-                
-                // Reset joystick to center
-                joystickHandle.style.transform = 'translate(-50%, -50%)';
-                
-                // Reset movement keys
-                controls.keysPressed['arrowup'] = false;
-                controls.keysPressed['arrowdown'] = false;
-                controls.keysPressed['arrowleft'] = false;
-                controls.keysPressed['arrowright'] = false;
-                
-                isDragging = false;
-                currentX = 0;
-                currentY = 0;
-            });
-            
-            // Update joystick position based on touch
-            function updateJoystickPosition(touchX, touchY) {
-                // Calculate distance from center
-                let dist = distance(centerX, centerY, touchX, touchY);
-                
-                // Calculate direction vector
-                let dirX = touchX - centerX;
-                let dirY = touchY - centerY;
-                
-                // Normalize to max distance
-                if (dist > maxDistance) {
-                    dirX = dirX / dist * maxDistance;
-                    dirY = dirY / dist * maxDistance;
-                    dist = maxDistance;
-                }
-                
-                // Move the joystick handle
-                joystickHandle.style.transform = `translate(calc(${dirX}px - 50%), calc(${dirY}px - 50%))`;
-                
-                // Calculate normalized direction (-1 to 1)
-                const normalizedX = dirX / maxDistance;
-                const normalizedY = dirY / maxDistance;
-                
-                // Update current position
-                currentX = normalizedX;
-                currentY = normalizedY;
-                
-                // Set movement keys based on joystick position
-                const deadzone = 0.3; // Minimum movement to trigger direction
-                
-                controls.keysPressed['arrowup'] = normalizedY < -deadzone;
-                controls.keysPressed['arrowdown'] = normalizedY > deadzone;
-                controls.keysPressed['arrowleft'] = normalizedX < -deadzone;
-                controls.keysPressed['arrowright'] = normalizedX > deadzone;
-            }
-        }
-
-        // Make an element draggable (for mobile inventory)
-        function makeElementDraggable(element) {
-            let isDragging = false;
-            let offsetX, offsetY;
-            
-            // Add drag handle
-            const dragHandle = document.createElement('div');
-            dragHandle.style.width = '100%';
-            dragHandle.style.height = '20px';
-            dragHandle.style.backgroundColor = 'rgba(85, 51, 136, 0.8)';
-            dragHandle.style.borderTopLeftRadius = '5px';
-            dragHandle.style.borderTopRightRadius = '5px';
-            dragHandle.style.cursor = 'move';
-            dragHandle.style.position = 'absolute';
-            dragHandle.style.top = '0';
-            dragHandle.style.left = '0';
-            
-            element.style.paddingTop = '25px';
-            element.appendChild(dragHandle);
-            
-            // Touch handlers
-            dragHandle.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                isDragging = true;
-                
-                const touch = e.touches[0];
-                const rect = element.getBoundingClientRect();
-                
-                offsetX = touch.clientX - rect.left;
-                offsetY = touch.clientY - rect.top;
-                
-                element.style.transition = 'none';
-            });
-            
-            document.addEventListener('touchmove', function(e) {
-                if (!isDragging) return;
-                e.preventDefault();
-                
-                const touch = e.touches[0];
-                
-                const left = touch.clientX - offsetX;
-                const top = touch.clientY - offsetY;
-                
-                // Keep inventory within window bounds
-                const maxX = window.innerWidth - element.offsetWidth;
-                const maxY = window.innerHeight - element.offsetHeight;
-                
-                element.style.left = Math.max(0, Math.min(maxX, left)) + 'px';
-                element.style.top = Math.max(0, Math.min(maxY, top)) + 'px';
-                element.style.transform = 'none';
-            });
-            
-            document.addEventListener('touchend', function() {
-                isDragging = false;
-            });
         }
 
         // Animation loop
@@ -2154,37 +2738,6 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Toggle chat visibility
-        function toggleChat() {
-            chatUI.classList.toggle('hidden');
-            if (!chatUI.classList.contains('hidden')) {
-                chatInput.focus();
-            }
-        }
-
-        // Toggle inventory visibility
-        function toggleInventory() {
-            inventory.classList.toggle('hidden');
-        }
-
-        // Update health and mana bars
-        function updateHealthMana() {
-            const healthFill = document.getElementById('health-fill');
-            const manaFill = document.getElementById('mana-fill');
-            
-            const healthText = healthBar.querySelector('.progress-text');
-            const manaText = manaBar.querySelector('.progress-text');
-            
-            const healthPercent = (gameState.player.health / gameState.player.maxHealth) * 100;
-            const manaPercent = (gameState.player.mana / gameState.player.maxMana) * 100;
-            
-            healthFill.style.width = `${healthPercent}%`;
-            manaFill.style.width = `${manaPercent}%`;
-            
-            healthText.textContent = `${gameState.player.health}/${gameState.player.maxHealth}`;
-            manaText.textContent = `${gameState.player.mana}/${gameState.player.maxMana}`;
-        }
-
         // Save character to localStorage
         function saveCharacter() {
             localStorage.setItem('pixelRealmsCharacter', JSON.stringify(gameState.player));
@@ -2253,6 +2806,68 @@
             hideElement(playerModal);
             // Also make sure to reset the display style
             playerModal.style.display = 'none';
+        }
+
+        // Make an element draggable on touch devices
+        function makeElementDraggable(element) {
+            if (!element) return;
+            
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            const header = element.querySelector('h2, h3') || element;
+            
+            if (header) {
+                header.style.cursor = 'move';
+                header.addEventListener('touchstart', dragMouseDown);
+                header.addEventListener('mousedown', dragMouseDown);
+            }
+            
+            function dragMouseDown(e) {
+                e.preventDefault();
+                
+                // Get touch or mouse position
+                if (e.type === 'touchstart') {
+                    pos3 = e.touches[0].clientX;
+                    pos4 = e.touches[0].clientY;
+                } else {
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                }
+                
+                // Add event listeners for dragging and releasing
+                document.addEventListener('touchmove', elementDrag);
+                document.addEventListener('touchend', closeDragElement);
+                document.addEventListener('mousemove', elementDrag);
+                document.addEventListener('mouseup', closeDragElement);
+            }
+            
+            function elementDrag(e) {
+                e.preventDefault();
+                
+                // Calculate new position
+                if (e.type === 'touchmove') {
+                    pos1 = pos3 - e.touches[0].clientX;
+                    pos2 = pos4 - e.touches[0].clientY;
+                    pos3 = e.touches[0].clientX;
+                    pos4 = e.touches[0].clientY;
+                } else {
+                    pos1 = pos3 - e.clientX;
+                    pos2 = pos4 - e.clientY;
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                }
+                
+                // Set the element's new position
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+            
+            function closeDragElement() {
+                // Remove event listeners
+                document.removeEventListener('touchmove', elementDrag);
+                document.removeEventListener('touchend', closeDragElement);
+                document.removeEventListener('mousemove', elementDrag);
+                document.removeEventListener('mouseup', closeDragElement);
+            }
         }
 
         // Start the game
