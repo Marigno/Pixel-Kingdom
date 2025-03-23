@@ -1611,14 +1611,11 @@
             // Setup mouse controls
             renderer.domElement.addEventListener('click', (event) => {
                 if (isChatActive || isModalOpen()) {
-                    console.log('Click ignored - Chat active or modal open');
                     return;
                 }
                 
                 // Check if left mouse button
                 if (event.button === 0) {
-                    console.log('Mouse click detected');
-                    
                     // Calculate mouse position in normalized device coordinates (-1 to +1)
                     const mouse = new THREE.Vector2(
                         (event.clientX / window.innerWidth) * 2 - 1,
@@ -1780,9 +1777,15 @@
                 
                 update: function(delta) {
                     // Skip movement if chat is active or any modal is open
-                    if (this.isChatActive() || isModalOpen()) {
-                        // Debug when movement is skipped
-                        console.log('Movement skipped - Chat active:', this.isChatActive(), 'Modal open:', isModalOpen());
+                    const isModalVisible = document.getElementById('character-screen') && !document.getElementById('character-screen').classList.contains('hidden') ||
+                              document.getElementById('map-screen') && !document.getElementById('map-screen').classList.contains('hidden') ||
+                              document.getElementById('inventory') && !document.getElementById('inventory').classList.contains('hidden') ||
+                              document.getElementById('player-modal') && !document.getElementById('player-modal').classList.contains('hidden') ||
+                              document.getElementById('reconnect-token') && !document.getElementById('reconnect-token').classList.contains('hidden') ||
+                              document.getElementById('key-bindings') && !document.getElementById('key-bindings').classList.contains('hidden') ||
+                              document.getElementById('character-creation') && !document.getElementById('character-creation').classList.contains('hidden');
+                    
+                    if (this.isChatActive() || isModalVisible) {
                         return;
                     }
                     
@@ -1794,26 +1797,11 @@
                     if (this.keysPressed['a'] || this.keysPressed['arrowleft']) moveDirection.x -= 1;
                     if (this.keysPressed['d'] || this.keysPressed['arrowright']) moveDirection.x += 1;
                     
-                    // Debug log if we have keyboard input
-                    if (this.keysPressed['w'] || this.keysPressed['arrowup'] || 
-                        this.keysPressed['s'] || this.keysPressed['arrowdown'] || 
-                        this.keysPressed['a'] || this.keysPressed['arrowleft'] || 
-                        this.keysPressed['d'] || this.keysPressed['arrowright']) {
-                        console.log('Keyboard input detected:', 
-                                   'W:', this.keysPressed['w'], 
-                                   'A:', this.keysPressed['a'], 
-                                   'S:', this.keysPressed['s'], 
-                                   'D:', this.keysPressed['d'],
-                                   'Arrows:', this.keysPressed['arrowup'], this.keysPressed['arrowdown'], 
-                                   this.keysPressed['arrowleft'], this.keysPressed['arrowright']);
-                    }
-                    
                     // For mobile devices, use joystick input if available 
                     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
                     if (isTouchDevice && this.moveDirection.length() > 0) {
                         moveDirection.copy(this.moveDirection);
                     }
-                    // For desktop, we already set the moveDirection from keyboard above
                     
                     // Handle target position movement (from mouse clicks)
                     if (targetPosition) {
@@ -1917,27 +1905,16 @@
         
         // Check if any modal window is open
         function isModalOpen() {
-            try {
-                const modalElements = [
-                    document.getElementById('character-screen'),
-                    document.getElementById('map-screen'),
-                    document.getElementById('inventory'),
-                    document.getElementById('player-modal'),
-                    document.getElementById('reconnect-token'),
-                    document.getElementById('key-bindings'),
-                    document.getElementById('character-creation')
-                ];
-                
-                return modalElements.some(elem => {
-                    // Check if element exists before checking its properties
-                    return elem && 
-                           !elem.classList.contains('hidden') && 
-                           (elem.style.display === '' || elem.style.display !== 'none');
-                });
-            } catch (e) {
-                console.error('Error in isModalOpen:', e);
-                return false; // Default to allowing movement if there's an error
-            }
+            // Simple check for the most common modals without error risk
+            return (
+                document.getElementById('character-creation') && !document.getElementById('character-creation').classList.contains('hidden') || 
+                document.getElementById('character-screen') && !document.getElementById('character-screen').classList.contains('hidden') || 
+                document.getElementById('map-screen') && !document.getElementById('map-screen').classList.contains('hidden') || 
+                document.getElementById('inventory') && !document.getElementById('inventory').classList.contains('hidden') || 
+                document.getElementById('player-modal') && !document.getElementById('player-modal').classList.contains('hidden') || 
+                document.getElementById('reconnect-token') && !document.getElementById('reconnect-token').classList.contains('hidden') || 
+                document.getElementById('key-bindings') && !document.getElementById('key-bindings').classList.contains('hidden')
+            );
         }
         
         // Toggle inventory visibility
@@ -2403,6 +2380,10 @@
                 created: new Date().toISOString()
             };
             
+            // Generate character token
+            const characterData = JSON.stringify(gameState.player);
+            gameState.player.token = btoa(characterData);
+            
             // Save character to localStorage
             saveCharacter();
             
@@ -2476,6 +2457,17 @@
             if (isLoggedIn && gameState.player) {
                 const tokenModal = document.getElementById('reconnect-token');
                 const tokenText = document.getElementById('token-text');
+                
+                // Generate token if it doesn't exist
+                if (!gameState.player.token) {
+                    // Create token by encoding character data as base64
+                    const characterData = JSON.stringify(gameState.player);
+                    gameState.player.token = btoa(characterData);
+                    
+                    // Save updated character with token
+                    saveCharacter();
+                }
+                
                 tokenText.textContent = gameState.player.token;
                 showElement(tokenModal);
             }
@@ -2818,70 +2810,89 @@
         
         // Update a specific player list content
         function updatePlayerListContent(elementId) {
-            // Clear the list
-            const playerContainer = document.getElementById(elementId);
-            playerContainer.innerHTML = '';
-            
-            // Add the current player
-            const currentPlayerItem = document.createElement('div');
-            currentPlayerItem.className = 'player-item';
-            
-            const currentPlayerName = document.createElement('div');
-            currentPlayerName.className = 'player-name';
-            currentPlayerName.textContent = `${gameState.player.name} (You)`;
-            
-            const currentPlayerInfo = document.createElement('div');
-            currentPlayerInfo.className = 'player-info';
-            
-            const currentPlayerLevel = document.createElement('span');
-            currentPlayerLevel.textContent = `Lvl ${gameState.player.level}`;
-            
-            const healthIndicator = document.createElement('div');
-            healthIndicator.className = 'health-indicator';
-            healthIndicator.style.backgroundColor = getHealthColor(gameState.player.health, gameState.player.maxHealth);
-            
-            currentPlayerInfo.appendChild(currentPlayerLevel);
-            currentPlayerInfo.appendChild(healthIndicator);
-            
-            currentPlayerItem.appendChild(currentPlayerName);
-            currentPlayerItem.appendChild(currentPlayerInfo);
-            playerContainer.appendChild(currentPlayerItem);
-            
-            // Add other players
-            const playerIds = Object.keys(gameState.otherPlayers);
-            
-            playerIds.forEach(id => {
-                const player = gameState.otherPlayers[id];
+            try {
+                // Check if the element exists
+                const playerContainer = document.getElementById(elementId);
+                if (!playerContainer) {
+                    console.error(`Player list container #${elementId} not found`);
+                    return;
+                }
                 
-                const playerItem = document.createElement('div');
-                playerItem.className = 'player-item';
+                // Clear the list
+                playerContainer.innerHTML = '';
                 
-                const playerName = document.createElement('div');
-                playerName.className = 'player-name';
-                playerName.textContent = player.data.name;
+                // Add the current player
+                if (gameState.player) {
+                    const currentPlayerItem = document.createElement('div');
+                    currentPlayerItem.className = 'player-item';
+                    
+                    const currentPlayerName = document.createElement('div');
+                    currentPlayerName.className = 'player-name';
+                    currentPlayerName.textContent = `${gameState.player.name || 'Unknown'} (You)`;
+                    
+                    const currentPlayerInfo = document.createElement('div');
+                    currentPlayerInfo.className = 'player-info';
+                    
+                    const currentPlayerLevel = document.createElement('span');
+                    currentPlayerLevel.textContent = `Lvl ${gameState.player.level || 1}`;
+                    
+                    const healthIndicator = document.createElement('div');
+                    healthIndicator.className = 'health-indicator';
+                    healthIndicator.style.backgroundColor = getHealthColor(
+                        gameState.player.health || 100, 
+                        gameState.player.maxHealth || 100
+                    );
+                    
+                    currentPlayerInfo.appendChild(currentPlayerLevel);
+                    currentPlayerInfo.appendChild(healthIndicator);
+                    
+                    currentPlayerItem.appendChild(currentPlayerName);
+                    currentPlayerItem.appendChild(currentPlayerInfo);
+                    playerContainer.appendChild(currentPlayerItem);
+                }
                 
-                const playerInfo = document.createElement('div');
-                playerInfo.className = 'player-info';
-                
-                const playerLevel = document.createElement('span');
-                // Use level from player data if available, default to 1
-                const level = player.data.level || 1;
-                playerLevel.textContent = `Lvl ${level}`;
-                
-                const healthInd = document.createElement('div');
-                healthInd.className = 'health-indicator';
-                // Default to full health if not specified
-                const health = player.data.health || 100;
-                const maxHealth = player.data.maxHealth || 100;
-                healthInd.style.backgroundColor = getHealthColor(health, maxHealth);
-                
-                playerInfo.appendChild(playerLevel);
-                playerInfo.appendChild(healthInd);
-                
-                playerItem.appendChild(playerName);
-                playerItem.appendChild(playerInfo);
-                playerContainer.appendChild(playerItem);
-            });
+                // Add other players if any exist
+                if (gameState.otherPlayers) {
+                    const playerIds = Object.keys(gameState.otherPlayers);
+                    
+                    playerIds.forEach(id => {
+                        const player = gameState.otherPlayers[id];
+                        if (!player || !player.data) return;
+                        
+                        const playerItem = document.createElement('div');
+                        playerItem.className = 'player-item';
+                        
+                        const playerName = document.createElement('div');
+                        playerName.className = 'player-name';
+                        playerName.textContent = player.data.name || 'Unknown';
+                        
+                        const playerInfo = document.createElement('div');
+                        playerInfo.className = 'player-info';
+                        
+                        const playerLevel = document.createElement('span');
+                        // Use level from player data if available, default to 1
+                        const level = player.data.level || 1;
+                        playerLevel.textContent = `Lvl ${level}`;
+                        
+                        const healthInd = document.createElement('div');
+                        healthInd.className = 'health-indicator';
+                        // Default to full health if not specified
+                        const health = player.data.health || 100;
+                        const maxHealth = player.data.maxHealth || 100;
+                        healthInd.style.backgroundColor = getHealthColor(health, maxHealth);
+                        
+                        playerInfo.appendChild(playerLevel);
+                        playerInfo.appendChild(healthInd);
+                        
+                        playerItem.appendChild(playerName);
+                        playerItem.appendChild(playerInfo);
+                        
+                        playerContainer.appendChild(playerItem);
+                    });
+                }
+            } catch (error) {
+                console.error('Error updating player list:', error);
+            }
         }
         
         // Get color based on health percentage
