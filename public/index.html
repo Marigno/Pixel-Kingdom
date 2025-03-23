@@ -639,6 +639,107 @@
             lastSaveTime: 0
         };
 
+        // Collision detection system
+        const collisionSystem = {
+            // Map boundary constraints
+            mapBounds: {
+                minX: -CONFIG.WORLD_SIZE * CONFIG.TILE_SIZE / 2,
+                maxX: CONFIG.WORLD_SIZE * CONFIG.TILE_SIZE / 2,
+                minZ: -CONFIG.WORLD_SIZE * CONFIG.TILE_SIZE / 2,
+                maxZ: CONFIG.WORLD_SIZE * CONFIG.TILE_SIZE / 2
+            },
+            
+            // Collection of obstacles
+            obstacles: [],
+            
+            // Add an obstacle to the collision system
+            addObstacle: function(position, radius, type) {
+                this.obstacles.push({
+                    position: position,
+                    radius: radius,
+                    type: type
+                });
+            },
+            
+            // Check if a position is within map bounds
+            isInBounds: function(position) {
+                return position.x >= this.mapBounds.minX && 
+                       position.x <= this.mapBounds.maxX && 
+                       position.z >= this.mapBounds.minZ && 
+                       position.z <= this.mapBounds.maxZ;
+            },
+            
+            // Check if a position collides with any obstacle
+            checkCollision: function(position, radius = 0.5) {
+                // First check map bounds
+                if (!this.isInBounds(position)) {
+                    return true; // Collision with map bounds
+                }
+                
+                // Then check obstacles
+                for (let obstacle of this.obstacles) {
+                    const distance = Math.sqrt(
+                        Math.pow(position.x - obstacle.position.x, 2) + 
+                        Math.pow(position.z - obstacle.position.z, 2)
+                    );
+                    
+                    if (distance < (radius + obstacle.radius)) {
+                        return true; // Collision with obstacle
+                    }
+                }
+                
+                return false; // No collision
+            },
+            
+            // Get valid position closest to target
+            getValidPosition: function(current, target, radius = 0.5) {
+                // If target is valid, return it directly
+                if (!this.checkCollision(target, radius)) {
+                    return target;
+                }
+                
+                // Otherwise, find the furthest valid position along the path
+                const direction = new THREE.Vector3(
+                    target.x - current.x,
+                    target.y - current.y,
+                    target.z - current.z
+                ).normalize();
+                
+                const maxDistance = Math.sqrt(
+                    Math.pow(target.x - current.x, 2) + 
+                    Math.pow(target.z - current.z, 2)
+                );
+                
+                let validPosition = {
+                    x: current.x,
+                    y: current.y,
+                    z: current.z
+                };
+                
+                // Binary search for the furthest valid position
+                let minDist = 0;
+                let maxDist = maxDistance;
+                
+                for (let i = 0; i < 10; i++) { // 10 iterations should be enough
+                    const testDist = (minDist + maxDist) / 2;
+                    const testPos = {
+                        x: current.x + direction.x * testDist,
+                        y: current.y,
+                        z: current.z + direction.z * testDist
+                    };
+                    
+                    if (this.checkCollision(testPos, radius)) {
+                        maxDist = testDist;
+                    } else {
+                        minDist = testDist;
+                        validPosition = testPos;
+                    }
+                }
+                
+                return validPosition;
+            }
+        };
+
         // Main game components
         let scene, camera, renderer, clock;
         let controls, playerMesh, worldGroup, itemsGroup, playerGroup;
@@ -661,139 +762,157 @@
 
         // Initialize the game
         function init() {
-            // Check if there's a saved character
-            const savedCharacter = localStorage.getItem('pixelRealmsCharacter');
-            if (savedCharacter) {
-                try {
-                    gameState.player = JSON.parse(savedCharacter);
-                    document.getElementById('char-name').textContent = gameState.player.name;
-                    document.getElementById('char-level').textContent = gameState.player.level;
-                    updateHealthMana();
-                    hideElement(characterCreation);
-                    showGameUI();
-                    
-                    // On mobile, hide chat and inventory by default
-                    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-                        hideElement(chatUI);
-                        hideElement(inventory);
-                    }
-                    
-                    initGameWorld();
-                    connectToServer();
-                    isLoggedIn = true;
-                } catch (e) {
-                    console.error('Error loading saved character', e);
-                    // If loading fails, we'll just show character creation
-                }
-            }
-            
-            // Set up event listeners for character creation
-            document.getElementById('start-new').addEventListener('click', createNewCharacter);
-            document.getElementById('show-token-input').addEventListener('click', function() {
-                document.getElementById('token-import').classList.toggle('hidden');
-            });
-            document.getElementById('import-token').addEventListener('click', importCharacter);
-            document.getElementById('copy-token').addEventListener('click', copyTokenToClipboard);
-            document.getElementById('close-token').addEventListener('click', function() {
-                hideElement(reconnectToken);
-            });
-            
-            // Chat functionality
-            chatInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    const message = chatInput.value.trim();
-                    if (message) {
-                        sendChatMessage(message);
-                        chatInput.value = '';
-                        // On mobile, blur the input to hide keyboard and reset viewport
+            try {
+                console.log('Initializing game...');
+                // Check if there's a saved character
+                const savedCharacter = localStorage.getItem('pixelRealmsCharacter');
+                if (savedCharacter) {
+                    try {
+                        gameState.player = JSON.parse(savedCharacter);
+                        document.getElementById('char-name').textContent = gameState.player.name;
+                        document.getElementById('char-level').textContent = gameState.player.level;
+                        updateHealthMana();
+                        hideElement(characterCreation);
+                        showGameUI();
+                        
+                        // On mobile, hide chat and inventory by default
                         if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-                            chatInput.blur();
-                            // Force scroll adjustment after keyboard disappears
-                            setTimeout(() => {
-                                window.scrollTo(0, 0);
-                            }, 100);
+                            hideElement(chatUI);
+                            hideElement(inventory);
                         }
+                        
+                        console.log('Initializing game world with saved character');
+                        initGameWorld();
+                        connectToServer();
+                        isLoggedIn = true;
+                    } catch (e) {
+                        console.error('Error loading saved character', e);
+                        // If loading fails, we'll just show character creation
+                        localStorage.removeItem('pixelRealmsCharacter');
+                        showElement(characterCreation);
                     }
+                } else {
+                    // If no saved character, just show the creation screen
+                    showElement(characterCreation);
                 }
                 
-                // Prevent any movement keys from triggering while typing
-                if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'space'].includes(e.key.toLowerCase())) {
-                    e.stopPropagation();
-                }
-            });
-            
-            if (!isLoggedIn) {
-                // If no saved character, just show the creation screen
-                showElement(characterCreation);
+                // Set up event listeners for character creation
+                document.getElementById('start-new').addEventListener('click', createNewCharacter);
+                document.getElementById('show-token-input').addEventListener('click', function() {
+                    document.getElementById('token-import').classList.toggle('hidden');
+                });
+                document.getElementById('import-token').addEventListener('click', importCharacter);
+                document.getElementById('copy-token').addEventListener('click', copyTokenToClipboard);
+                document.getElementById('close-token').addEventListener('click', function() {
+                    hideElement(reconnectToken);
+                });
+                
+                // Chat functionality
+                chatInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        const message = chatInput.value.trim();
+                        if (message) {
+                            sendChatMessage(message);
+                            chatInput.value = '';
+                            // On mobile, blur the input to hide keyboard and reset viewport
+                            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                                chatInput.blur();
+                                // Force scroll adjustment after keyboard disappears
+                                setTimeout(() => {
+                                    window.scrollTo(0, 0);
+                                }, 100);
+                            }
+                        }
+                    }
+                    
+                    // Prevent any movement keys from triggering while typing
+                    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'space'].includes(e.key.toLowerCase())) {
+                        e.stopPropagation();
+                    }
+                });
+                
+                console.log('Initialization complete');
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                alert('There was an error initializing the game. Please refresh the page.');
             }
         }
 
         // Initialize the 3D game world
         function initGameWorld() {
-            // Scene setup
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x243447); // Dark blue background
-            
-            // Renderer setup
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('game-container').appendChild(renderer.domElement);
-            
-            // Camera setup
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 10, 10);
-            camera.lookAt(0, 0, 0);
-            
-            // Basic lighting
-            const ambientLight = new THREE.AmbientLight(0x404040);
-            scene.add(ambientLight);
-            
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(1, 1, 1);
-            scene.add(directionalLight);
-            
-            // Create groups for organization
-            worldGroup = new THREE.Group();
-            itemsGroup = new THREE.Group();
-            playerGroup = new THREE.Group();
-            scene.add(worldGroup);
-            scene.add(itemsGroup);
-            scene.add(playerGroup);
-            
-            // Create player character
-            playerMesh = createCharacterMesh(gameState.player.class);
-            playerMesh.position.set(
-                gameState.player.position.x, 
-                gameState.player.position.y, 
-                gameState.player.position.z
-            );
-            playerGroup.add(playerMesh);
-            
-            // Add a nametag above the player
-            createPlayerNameTag(playerMesh, gameState.player.name);
-            
-            // Setup camera to follow player
-            camera.position.set(
-                playerMesh.position.x, 
-                playerMesh.position.y + 8, 
-                playerMesh.position.z + 8
-            );
-            camera.lookAt(playerMesh.position);
-            
-            // Generate initial world chunks
-            generateInitialWorld();
-            
-            // Setup clock for animations
-            clock = new THREE.Clock();
-            
-            // Setup keyboard controls
-            setupControls();
-            
-            // Start game loop
-            animate();
-            
-            // Handle window resize
-            window.addEventListener('resize', onWindowResize);
+            try {
+                // Scene setup
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x243447); // Dark blue background
+                
+                // Renderer setup
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                document.getElementById('game-container').appendChild(renderer.domElement);
+                
+                // Camera setup
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.set(0, 10, 10);
+                camera.lookAt(0, 0, 0);
+                
+                // Basic lighting
+                const ambientLight = new THREE.AmbientLight(0x404040);
+                scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(1, 1, 1);
+                scene.add(directionalLight);
+                
+                // Create groups for organization
+                worldGroup = new THREE.Group();
+                itemsGroup = new THREE.Group();
+                playerGroup = new THREE.Group();
+                scene.add(worldGroup);
+                scene.add(itemsGroup);
+                scene.add(playerGroup);
+                
+                // Create player character
+                playerMesh = createCharacterMesh(gameState.player.class);
+                playerMesh.position.set(
+                    gameState.player.position.x, 
+                    gameState.player.position.y, 
+                    gameState.player.position.z
+                );
+                playerGroup.add(playerMesh);
+                
+                // Add a nametag above the player
+                createPlayerNameTag(playerMesh, gameState.player.name);
+                
+                // Setup camera to follow player
+                camera.position.set(
+                    playerMesh.position.x, 
+                    playerMesh.position.y + 8, 
+                    playerMesh.position.z + 8
+                );
+                camera.lookAt(playerMesh.position);
+                
+                console.log('Starting world generation');
+                // Generate initial world chunks
+                generateInitialWorld();
+                
+                // Setup clock for animations
+                clock = new THREE.Clock();
+                
+                // Setup keyboard controls
+                setupControls();
+                
+                // Start game loop
+                animate();
+                
+                // Handle window resize
+                window.addEventListener('resize', onWindowResize);
+                
+                console.log('Game world initialization complete');
+            } catch (error) {
+                console.error('Error initializing game world:', error);
+                hideElement(characterCreation);
+                addSystemMessage('Error initializing game. Please refresh the page and try again.');
+            }
         }
 
         // Create basic character mesh based on class
@@ -853,34 +972,42 @@
 
         // Generate the initial world chunks
         function generateInitialWorld() {
-            showLoadingIndicator('Generating world...');
-            
-            // Create a basic ground plane
-            const groundGeometry = new THREE.PlaneGeometry(
-                CONFIG.WORLD_SIZE * CONFIG.TILE_SIZE, 
-                CONFIG.WORLD_SIZE * CONFIG.TILE_SIZE
-            );
-            groundGeometry.rotateX(-Math.PI / 2);
-            
-            const groundMaterial = new THREE.MeshLambertMaterial({ 
-                color: 0x507744,
-                side: THREE.DoubleSide
-            });
-            
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            worldGroup.add(ground);
-            
-            // Add some random obstacles and decoration
-            addWorldDecoration();
-            
-            hideLoadingIndicator();
+            try {
+                showLoadingIndicator('Generating world...');
+                
+                // Create a basic ground plane
+                const groundGeometry = new THREE.PlaneGeometry(
+                    CONFIG.WORLD_SIZE * CONFIG.TILE_SIZE, 
+                    CONFIG.WORLD_SIZE * CONFIG.TILE_SIZE
+                );
+                groundGeometry.rotateX(-Math.PI / 2);
+                
+                const groundMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0x507744,
+                    side: THREE.DoubleSide
+                });
+                
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                worldGroup.add(ground);
+                
+                // Add some random obstacles and decoration
+                addWorldDecoration();
+                
+                hideLoadingIndicator();
+                console.log('World generation complete');
+            } catch (error) {
+                console.error('Error generating world:', error);
+                hideLoadingIndicator();
+                addSystemMessage('Error generating world. Please refresh the page.');
+            }
         }
 
         // Add decorative elements to the world
         function addWorldDecoration() {
             // Generate a deterministic seed for consistent map generation
             const seed = 12345;
-            const rng = new Math.seedrandom(seed.toString());
+            // Create a seeded random number generator
+            const rng = new Math.seedrandom ? new Math.seedrandom(seed.toString()) : Math.random;
             
             // Add trees
             for (let i = 0; i < 50; i++) {
@@ -1285,12 +1412,14 @@
                 btnAction.addEventListener('touchstart', () => {
                     // Example: trigger attack action
                     console.log('Action button pressed');
+                    performAttackAction();
                 });
                 
                 // Interact button - for interacting with NPCs, items, etc.
                 btnInteract.addEventListener('touchstart', () => {
                     // Example: trigger interaction with nearby object
                     console.log('Interact button pressed');
+                    performJumpAction();
                 });
                 
                 // Chat button
